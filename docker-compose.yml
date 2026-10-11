@@ -27,6 +27,12 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-realtime_leaderboard}
       - REDIS_URL=redis://redis:6379
+      # Frontend build/dev vars. Vite reads frontend/.env for local runs; these
+      # forward values set in the root .env into the container (empty is fine:
+      # an empty base URL means same-origin, and an empty proxy target falls
+      # back to the in-container backend on :8080).
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+      - API_PROXY_TARGET=${API_PROXY_TARGET:-}
       - GH_TOKEN=${GH_TOKEN:-}
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - HOME=/home/devuser

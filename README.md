@@ -59,8 +59,8 @@ cargo run --bin rebuild     # reads DATABASE_URL and REDIS_URL
 ## Frontend
 
 A React + TypeScript single-page app (Vite) that submits a score, looks up a
-player's rank, and pages the leaderboard — against the same API contract
-(`backend/openapi.json`).
+player's rank, and shows the top of the leaderboard — against the same API
+contract (`backend/openapi.json`).
 
 ```bash
 cd frontend
@@ -68,10 +68,13 @@ npm ci            # install from the lockfile
 npm run dev       # Vite dev server on http://localhost:5173
 ```
 
-The dev server proxies the API routes to the backend on `:8080`, so requests are
-same-origin and no CORS layer is needed. Point at a different backend by setting
-`VITE_API_BASE_URL` (see `.env.example`). Inside the sandbox, run `npm run dev`
-from a `make shell`, then open host port **5173** (`WEB_HOST_PORT` to override).
+The dev server proxies the API routes to the backend, so requests are same-origin
+and no CORS layer is needed. It targets `http://localhost:8080` by default (the
+in-sandbox backend); on a host the API is published on `8082`, so use
+`API_PROXY_TARGET=http://localhost:8082 npm run dev`. For a remote API set
+`VITE_API_BASE_URL` (see the root `.env.example`). Inside the sandbox, run
+`npm run dev` from a `make shell`, then open host port **5173** (`WEB_HOST_PORT`
+to override).
 
 | Command | What it does |
 |---------|--------------|

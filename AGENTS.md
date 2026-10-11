@@ -126,14 +126,16 @@ reachable.
 
 The dev sandbox publishes `"${HOST_PORT:-8082}:8080"`, so the API is on host
 **8082** by default — the sibling projects already hold 8080 and 8081. Postgres
-and Redis are published on host **5433** and **6380** to avoid the default ports.
-Every host port is env-overridable, so two sandboxes can run side by side.
+and Redis are published on host **5433** and **6380** to avoid the default ports,
+and the Vite dev server on host **5173**. Every host port is env-overridable, so
+two sandboxes can run side by side.
 
-| Service  | Host port | Container port |
-|----------|-----------|----------------|
-| dev (API)| 8082      | 8080           |
-| Postgres | 5433      | 5432           |
-| Redis    | 6380      | 6379           |
+| Service         | Host port | Container port |
+|-----------------|-----------|----------------|
+| dev (API)       | 8082      | 8080           |
+| dev (frontend)  | 5173      | 5173           |
+| Postgres        | 5433      | 5432           |
+| Redis           | 6380      | 6379           |
 
 ## Key Conventions
 
