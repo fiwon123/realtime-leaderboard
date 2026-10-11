@@ -29,7 +29,7 @@ ranking served from Redis sorted sets.
 - Database: PostgreSQL
 - Query layer: sqlx (compile-time-checked SQL)
 - Cache / ranking: Redis (sorted sets)
-- Frontend: planned, not yet configured — see "Agents" below
+- Frontend: React 19 + TypeScript on Vite (Vitest + Testing Library + MSW)
 - Development: Docker Compose (optional) + mise for toolchain pins
 
 ### Core Architecture
@@ -46,6 +46,7 @@ Rust API (Axum)
 
 ```text
 backend/    # Rust API: routes, services, storage, and ranking
+frontend/   # React + TypeScript app: score submit, rank lookup, leaderboard
 ```
 
 ## Development Commands
@@ -62,6 +63,18 @@ cargo clippy --all-targets -- -D warnings   # Lint
 cargo test                   # Unit + integration tests
 ```
 
+### Frontend
+
+```bash
+cd frontend
+npm ci                       # Install from the lockfile
+npm run dev                  # Vite dev server (:5173), proxies the API on :8080
+npm run lint                 # oxlint
+npm run typecheck            # tsc -b
+npm test                     # Vitest + Testing Library + MSW
+npm run build                # Type-check and build dist/
+```
+
 ### Docker Compose (optional)
 
 ```bash
@@ -76,13 +89,16 @@ docker compose logs -f dev   # Tail the dev container
 make check
 ```
 
-`make check` delegates to `backend/Makefile` (the Rust component fragment):
-`cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`,
-`cargo test --locked`, `cargo build --locked`.
+`make check` runs each component's fragment:
 
-**Until `backend/Cargo.toml` exists the Rust steps are skipped** — a skipped run
-is not a passed run, so scaffolding changes are verified by review, not by
-`make`. Prefer `make check` over listing commands separately: agents follow
+- `backend/Makefile` (Rust): `cargo fmt --check`,
+  `cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`,
+  `cargo build --locked`.
+- `frontend/Makefile` (Node): `npm ci`, then `npm run lint`, `npm run typecheck`,
+  `npm test`, `npm run build`.
+
+A missing toolchain (no `cargo`, no `npm`) makes a fragment report a **skip**, not
+a pass — prefer `make check` over listing commands separately: agents follow
 whatever `check` runs, so a check missing from it is a check nobody performs.
 
 ## Runtime Environment
@@ -110,14 +126,16 @@ reachable.
 
 The dev sandbox publishes `"${HOST_PORT:-8082}:8080"`, so the API is on host
 **8082** by default — the sibling projects already hold 8080 and 8081. Postgres
-and Redis are published on host **5433** and **6380** to avoid the default ports.
-Every host port is env-overridable, so two sandboxes can run side by side.
+and Redis are published on host **5433** and **6380** to avoid the default ports,
+and the Vite dev server on host **5173**. Every host port is env-overridable, so
+two sandboxes can run side by side.
 
-| Service  | Host port | Container port |
-|----------|-----------|----------------|
-| dev (API)| 8082      | 8080           |
-| Postgres | 5433      | 5432           |
-| Redis    | 6380      | 6379           |
+| Service         | Host port | Container port |
+|-----------------|-----------|----------------|
+| dev (API)       | 8082      | 8080           |
+| dev (frontend)  | 5173      | 5173           |
+| Postgres        | 5433      | 5432           |
+| Redis           | 6380      | 6379           |
 
 ## Key Conventions
 
@@ -125,13 +143,13 @@ Every host port is env-overridable, so two sandboxes can run side by side.
 - **Two-tier branch model**: `main` (release only) ← `dev` (integration) ← feature branches
 - **Issue-first workflow**: No code without an issue — open/organize, create branch, build, test, PR
 - **Conventional commits**: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `ci:`
-- **Configuration-only for now**: the scaffold ships first; application code starts with the first feature issue. `make check` skips the Rust steps until `backend/Cargo.toml` exists — a skipped run is not a passed run
+- **Two components**: `backend/` (Rust) and `frontend/` (Node); both are wired into `make check`, CI, and Dependabot. A missing toolchain (`cargo`, `npm`) reports a **skip**, not a pass
 - **Model assignments**: `opencode.json` is the source of truth — it assigns `opencode/big-pickle` to `build` and `opencode/mimo-v2.6-flash-free` to `plan`. Verify any new id with `opencode models` first: a catalog entry on models.dev does not guarantee your installed build offers it, and an unresolvable id fails at spawn rather than at config load
 - **Formatting**: `rustfmt` (`cargo fmt --check` is the gate)
-- **Linting**: `clippy` across all targets, warnings denied (`cargo clippy --all-targets -- -D warnings`)
-- **Testing**: `cargo test` — unit tests inline in `backend/src/`, integration tests in `backend/tests/`
+- **Linting**: `clippy` across all targets, warnings denied (`cargo clippy --all-targets -- -D warnings`); frontend `oxlint`
+- **Testing**: backend `cargo test` (unit inline in `backend/src/`, integration in `backend/tests/`); frontend `npm test` (Vitest + Testing Library + MSW, tests colocated in `frontend/src/`)
 - **sqlx offline cache**: compile-time-checked queries need a live database at build time or a committed `.sqlx/` cache with `SQLX_OFFLINE=true`. **`.sqlx/` must not be gitignored** — dropping it turns every `cargo build` into a database requirement
-- **CI**: GitHub Actions runs fmt + clippy + test + build on `dev` → `main` PRs only, plus manual `workflow_dispatch` — never on feature-branch pushes. Local `make check` is the feature-branch gate
+- **CI**: GitHub Actions runs the backend job (fmt + clippy + test + build) and the frontend job (lint + typecheck + test + build) on `dev` → `main` PRs only, plus manual `workflow_dispatch` — never on feature-branch pushes. Local `make check` is the feature-branch gate
 - **Dev environment**: Docker Compose (`db`, `redis`, `dev`); credentials reach the container as environment variables, never baked into the image
 
 ## Environment and Secret-File Rules
@@ -222,10 +240,12 @@ Agent definitions live in `opencode.json` and `.opencode/agents/`:
 - **backend** (subagent): Implements `backend/` routes, services, and ranking logic; `edit` is scoped to `backend/**`.
 - **tester** (subagent): Writes and runs tests; `edit` is scoped to test files and fixtures.
 
-`frontend` and `visual` ship in the templates but are **not configured here** —
-the frontend is deferred to its own issue. Add them, and their `task` permission
-entries, when the frontend lands; a subagent whose `edit` scope points at a
-directory that does not exist is an expensive way to say nothing.
+`frontend` and `visual` still ship as templates and are **not configured here**.
+The frontend directory now exists, but the `frontend` agent (scoped to
+`frontend/**`) and the `visual` QA agent, plus their `task` permission entries,
+are added in a follow-up issue so they do not ride in on the first frontend
+commit. A subagent whose `edit` scope points at a directory that does not exist
+is an expensive way to say nothing.
 
 Each agent's instructions live in exactly one place: the body of
 `.opencode/agents/<name>.md`. Model, mode, and permissions live in `opencode.json`.
@@ -255,9 +275,14 @@ its `.md` in the same commit.
 
 ### CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs `cargo fmt --check`,
-`cargo clippy --locked --all-targets -- -D warnings`, `cargo test --locked`, and
-`cargo build --locked` on `dev` → `main` PRs, and on manual `workflow_dispatch`.
+GitHub Actions (`.github/workflows/ci.yml`) runs two jobs on `dev` → `main` PRs,
+and on manual `workflow_dispatch`:
+
+- **backend**: `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`,
+  `cargo test --locked`, `cargo build --locked`.
+- **frontend**: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`,
+  `npm run build` (Node 22).
+
 It never runs on feature-branch pushes, so `make check` locally is the gate for
 feature work.
 

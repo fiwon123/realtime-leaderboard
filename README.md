@@ -6,9 +6,10 @@ PostgreSQL for durable score events and Redis sorted sets for live rankings.
 ## Status
 
 **MVP features in place.** Score events are ingested durably and idempotently,
-rankings are served live from Redis, and a rebuild tool re-creates the Redis
-board from Postgres. See `PROJECT_CONTEXT.md` for the project brief and
-`AGENTS.md` for how agents work in this repository.
+rankings are served live from Redis, a rebuild tool re-creates the Redis board
+from Postgres, and a React frontend exercises the three flows in a browser. See
+`PROJECT_CONTEXT.md` for the project brief and `AGENTS.md` for how agents work
+in this repository.
 
 ## API
 
@@ -55,9 +56,37 @@ cd backend
 cargo run --bin rebuild     # reads DATABASE_URL and REDIS_URL
 ```
 
+## Frontend
+
+A React + TypeScript single-page app (Vite) that submits a score, looks up a
+player's rank, and shows the top of the leaderboard — against the same API
+contract (`backend/openapi.json`).
+
+```bash
+cd frontend
+npm ci            # install from the lockfile
+npm run dev       # Vite dev server on http://localhost:5173
+```
+
+The dev server proxies the API routes to the backend, so requests are same-origin
+and no CORS layer is needed. It targets `http://localhost:8080` by default (the
+in-sandbox backend); on a host the API is published on `8082`, so use
+`API_PROXY_TARGET=http://localhost:8082 npm run dev`. For a remote API set
+`VITE_API_BASE_URL` (see the root `.env.example`). Inside the sandbox, run
+`npm run dev` from a `make shell`, then open host port **5173** (`WEB_HOST_PORT`
+to override).
+
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Vite dev server with HMR |
+| `npm test` | Vitest unit tests (React Testing Library + MSW) |
+| `npm run lint` / `npm run typecheck` | oxlint / `tsc -b` |
+| `npm run build` | Type-check and produce `dist/` |
+
 ## Stack
 
 - **Backend**: Rust — Axum on Tokio, queried through `sqlx`
+- **Frontend**: React 19 + TypeScript on Vite, tested with Vitest + Testing Library + MSW
 - **Database**: PostgreSQL 16
 - **Cache / ranking**: Redis 7 (sorted sets)
 - **Dev environment**: Docker Compose (dev sandbox + `db` + `redis`), `mise` for toolchain pins
@@ -66,12 +95,13 @@ cargo run --bin rebuild     # reads DATABASE_URL and REDIS_URL
 
 ```text
 backend/    # Rust API: routes, services, storage, and ranking
+frontend/   # React + TypeScript app: score submit, rank lookup, leaderboard
 ```
 
 ## Development
 
 ```bash
-make check        # fmt + clippy + test + build (no-ops until backend/Cargo.toml exists)
+make check        # backend (fmt + clippy + test + build) and frontend (lint + typecheck + test + build)
 make dev-up       # start Postgres, Redis, and the dev sandbox
 make shell        # shell inside the sandbox
 make opencode     # run opencode inside the sandbox
