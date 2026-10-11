@@ -24,6 +24,27 @@ board from Postgres. See `PROJECT_CONTEXT.md` for the project brief and
 invalid payload. Scores are best-per-player; equal scores rank the earlier
 event first.
 
+### Interactive docs (OpenAPI / Swagger UI)
+
+The API is described by an OpenAPI 3.1 document generated from the handler
+annotations with [`utoipa`](https://docs.rs/utoipa), and served by the API
+itself:
+
+- **Swagger UI** — `http://localhost:8082/swagger-ui/` (host port; the container
+  listens on `8080`). Every endpoint has **Try it out** against the running API.
+- **Raw spec** — `http://localhost:8082/swagger-ui/api-docs/openapi.json`.
+
+The spec is also committed as `backend/openapi.json` so it is reviewable in a
+diff. Regenerate it after changing a route:
+
+```bash
+cd backend
+cargo run --bin openapi     # rewrites openapi.json
+```
+
+CI runs the same command and fails if the file changes, so the document can
+never drift from the code.
+
 ### Ranking rebuild
 
 Redis is a projection of Postgres. If it drifts, recreate it from the source

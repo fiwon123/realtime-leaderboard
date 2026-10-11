@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::error::ApiError;
@@ -17,23 +18,40 @@ use super::validate_player_id;
 /// `score_events` / `player_scores` CHECK constraints in `0001_init.sql`.
 const MAX_SCORE: i64 = 1_000_000_000;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct ScoreEvent {
+    #[schema(example = "10a60a3a-c86c-4427-ae39-2db5a38e0dbd")]
     pub event_id: Uuid,
+    #[schema(example = "alice")]
     pub player_id: String,
+    #[schema(example = 100)]
     pub score: i64,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq, Eq, ToSchema)]
 pub struct ScoreEventResponse {
+    #[schema(example = "10a60a3a-c86c-4427-ae39-2db5a38e0dbd")]
     pub event_id: Uuid,
+    #[schema(example = "alice")]
     pub player_id: String,
+    #[schema(example = 100)]
     pub score: i64,
     /// `true` when this `event_id` had already been ingested.
     pub duplicate: bool,
 }
 
 /// `POST /scores` — 201 on a new event, 200 on an idempotent replay.
+#[utoipa::path(
+    post,
+    path = "/scores",
+    request_body = ScoreEvent,
+    responses(
+        (status = CREATED, description = "Event accepted and ranked", body = ScoreEventResponse),
+        (status = OK, description = "Duplicate event_id — already ingested", body = ScoreEventResponse),
+        (status = BAD_REQUEST, description = "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"),
+    ),
+    tag = "scores",
+)]
 pub async fn submit_score(
     State(state): State<AppState>,
     payload: Result<Json<ScoreEvent>, JsonRejection>,

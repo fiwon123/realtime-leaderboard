@@ -1,0 +1,337 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "realtime-leaderboard API",
+    "description": "Submit score events and read live leaderboard rankings.",
+    "license": {
+      "name": "MIT",
+      "identifier": "MIT"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "`GET /healthz` — 200 when Postgres and Redis both respond, 503 otherwise.",
+        "operationId": "healthz",
+        "responses": {
+          "200": {
+            "description": "Postgres and Redis both responding",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "At least one backing store is unreachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leaderboard": {
+      "get": {
+        "tags": [
+          "leaderboard"
+        ],
+        "summary": "`GET /leaderboard` — page through the top of the board, highest first.",
+        "operationId": "get_leaderboard",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size; defaults to 10, must be 1..=100",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of entries to skip before the page; defaults to 0",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the leaderboard, highest score first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit outside 1..=100, or offset too large"
+          },
+          "503": {
+            "description": "Leaderboard store unreachable"
+          }
+        }
+      }
+    },
+    "/players/{player_id}/rank": {
+      "get": {
+        "tags": [
+          "leaderboard"
+        ],
+        "summary": "`GET /players/{player_id}/rank` — a player's live board position.",
+        "operationId": "get_rank",
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "description": "Player id, 1..=128 bytes",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The player's live standing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Blank or overlong player_id"
+          },
+          "404": {
+            "description": "Player has no standing yet"
+          },
+          "503": {
+            "description": "Leaderboard store unreachable"
+          }
+        }
+      }
+    },
+    "/scores": {
+      "post": {
+        "tags": [
+          "scores"
+        ],
+        "summary": "`POST /scores` — 201 on a new event, 200 on an idempotent replay.",
+        "operationId": "submit_score",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Duplicate event_id — already ingested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreEventResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Event accepted and ranked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreEventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthBody": {
+        "type": "object",
+        "required": [
+          "status",
+          "postgres",
+          "redis"
+        ],
+        "properties": {
+          "postgres": {
+            "type": "boolean"
+          },
+          "redis": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "description": "`\"ok\"` when both stores answer, `\"degraded\"` otherwise.",
+            "example": "ok"
+          }
+        }
+      },
+      "LeaderboardEntry": {
+        "type": "object",
+        "required": [
+          "rank",
+          "player_id",
+          "score"
+        ],
+        "properties": {
+          "player_id": {
+            "type": "string",
+            "example": "alice"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based position, 1 = the current leader.",
+            "minimum": 0
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Best score, as the integer part of the composite."
+          }
+        }
+      },
+      "LeaderboardResponse": {
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            }
+          }
+        }
+      },
+      "RankResponse": {
+        "type": "object",
+        "required": [
+          "player_id",
+          "rank",
+          "score"
+        ],
+        "properties": {
+          "player_id": {
+            "type": "string",
+            "example": "alice"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int64",
+            "description": "1-based position, 1 = the current leader.",
+            "minimum": 0
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Best score, as the integer part of the composite."
+          }
+        }
+      },
+      "ScoreEvent": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "player_id",
+          "score"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "10a60a3a-c86c-4427-ae39-2db5a38e0dbd"
+          },
+          "player_id": {
+            "type": "string",
+            "example": "alice"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "example": 100
+          }
+        }
+      },
+      "ScoreEventResponse": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "player_id",
+          "score",
+          "duplicate"
+        ],
+        "properties": {
+          "duplicate": {
+            "type": "boolean",
+            "description": "`true` when this `event_id` had already been ingested."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "10a60a3a-c86c-4427-ae39-2db5a38e0dbd"
+          },
+          "player_id": {
+            "type": "string",
+            "example": "alice"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "example": 100
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness probes"
+    },
+    {
+      "name": "scores",
+      "description": "Score event ingestion"
+    },
+    {
+      "name": "leaderboard",
+      "description": "Live ranking reads"
+    }
+  ]
+}

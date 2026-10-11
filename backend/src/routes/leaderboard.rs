@@ -5,6 +5,7 @@ use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
+use utoipa::ToSchema;
 
 use crate::error::ApiError;
 use crate::services::ranking;
@@ -21,20 +22,36 @@ pub struct LeaderboardParams {
     pub offset: Option<u64>,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq, Eq, ToSchema)]
 pub struct LeaderboardEntry {
     /// 1-based position, 1 = the current leader.
     pub rank: u64,
+    #[schema(example = "alice")]
     pub player_id: String,
     /// Best score, as the integer part of the composite.
     pub score: i64,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq, Eq, ToSchema)]
 pub struct LeaderboardResponse {
     pub entries: Vec<LeaderboardEntry>,
 }
 
+/// `GET /leaderboard` — page through the top of the board, highest first.
+#[utoipa::path(
+    get,
+    path = "/leaderboard",
+    params(
+        ("limit" = Option<u64>, Query, description = "Page size; defaults to 10, must be 1..=100"),
+        ("offset" = Option<u64>, Query, description = "Number of entries to skip before the page; defaults to 0"),
+    ),
+    responses(
+        (status = OK, description = "A page of the leaderboard, highest score first", body = LeaderboardResponse),
+        (status = BAD_REQUEST, description = "limit outside 1..=100, or offset too large"),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store unreachable"),
+    ),
+    tag = "leaderboard",
+)]
 pub async fn get_leaderboard(
     State(state): State<AppState>,
     params: Result<Query<LeaderboardParams>, QueryRejection>,
