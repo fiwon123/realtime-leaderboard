@@ -61,6 +61,50 @@ pub async fn apply_standing(
     Ok(())
 }
 
+/// 1-based rank and decoded best score for a player with a standing, or `None`
+/// when the player has no live entry.
+pub async fn rank_of(
+    conn: &mut ConnectionManager,
+    player_id: &str,
+) -> redis::RedisResult<Option<(u64, i64)>> {
+    let position: Option<i64> = redis::cmd("ZREVRANK")
+        .arg(LEADERBOARD_KEY)
+        .arg(player_id)
+        .query_async(conn)
+        .await?;
+
+    let Some(position) = position else {
+        return Ok(None);
+    };
+
+    let composite: Option<f64> = redis::cmd("ZSCORE")
+        .arg(LEADERBOARD_KEY)
+        .arg(player_id)
+        .query_async(conn)
+        .await?;
+
+    Ok(Some((
+        position as u64 + 1,
+        decode_score(composite.unwrap_or_default()),
+    )))
+}
+
+/// The board from `start` to `stop` (inclusive), highest first, as
+/// `(member, composite)` pairs.
+pub async fn top(
+    conn: &mut ConnectionManager,
+    start: i64,
+    stop: i64,
+) -> redis::RedisResult<Vec<(String, f64)>> {
+    redis::cmd("ZREVRANGE")
+        .arg(LEADERBOARD_KEY)
+        .arg(start)
+        .arg(stop)
+        .arg("WITHSCORES")
+        .query_async::<Vec<(String, f64)>>(conn)
+        .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
