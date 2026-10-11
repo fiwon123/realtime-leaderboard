@@ -2,7 +2,7 @@
 
 COMPONENTS := backend frontend
 
-.PHONY: help check clean dev-up dev-down dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
+.PHONY: help check clean dev-up dev-down dev-frontend dev-frontend-log dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
 
 # Extra flags for the opencode invocation. `make opencode-auto` /
 # `make dev-opencode-auto` set this to --auto, which auto-approves permissions
@@ -37,6 +37,31 @@ preflight:
 
 dev-up: preflight
 	@HOST_UID=$$(id -u) HOST_GID=$$(id -g) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) docker compose up -d --build
+	@$(MAKE) dev-frontend
+
+# Start the frontend dev server inside the running `dev` container. Vite binds
+# 0.0.0.0:5173 (host:true) and the compose file publishes that port, so it is
+# reachable at http://localhost:5173 (Vite falls back to the next free port if
+# 5173 is held by something else). The API is in the same container on :8080,
+# Vite's default proxy target. Waits for the container, installs dependencies
+# only when the vite binary is missing, restarts any previous instance, starts
+# Vite detached, then waits for it to report ready — failing loudly otherwise.
+# Logs: /tmp/vite.log.
+dev-frontend: preflight
+	@i=0; while [ $$i -lt 30 ]; do docker compose exec -T dev true >/dev/null 2>&1 && break; sleep 1; i=$$((i+1)); done
+	@docker compose exec -T dev true >/dev/null 2>&1 || { echo "dev container is not running; run 'make dev-up' first" >&2; exit 1; }
+	@docker compose exec -T dev bash -lc 'pkill -f "vite/bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
+	@docker compose exec -T -d dev bash -lc 'cd /workspace/frontend && exec npm run dev >/tmp/vite.log 2>&1'
+	@i=0; while [ $$i -lt 30 ]; do \
+	  if docker compose exec -T dev grep -q "ready in" /tmp/vite.log 2>/dev/null; then \
+	    echo "frontend ready on http://localhost:$${WEB_HOST_PORT:-5173} (logs: make dev-frontend-log)"; exit 0; \
+	  fi; \
+	  sleep 1; i=$$((i+1)); \
+	done; \
+	echo "frontend did not report ready within 30s; run 'make dev-frontend-log' to see why" >&2; exit 1
+
+dev-frontend-log:
+	@docker compose exec dev tail -f /tmp/vite.log
 
 dev-down:
 	@docker compose down
