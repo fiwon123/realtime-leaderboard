@@ -22,3 +22,11 @@ pub async fn try_state() -> Option<AppState> {
 
     Some(AppState { db, redis })
 }
+
+/// Like [`try_state`], but applies migrations first. Returns `None` when the
+/// services are unreachable so tests skip cleanly.
+pub async fn try_migrated_state() -> Option<AppState> {
+    let state = try_state().await?;
+    sqlx::migrate!("./migrations").run(&state.db).await.ok()?;
+    Some(state)
+}

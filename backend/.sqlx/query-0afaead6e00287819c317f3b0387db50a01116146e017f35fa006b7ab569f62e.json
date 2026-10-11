@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO score_events (event_id, player_id, score)\n        VALUES ($1, $2, $3)\n        ON CONFLICT (event_id) DO NOTHING\n        RETURNING seq\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "seq",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0afaead6e00287819c317f3b0387db50a01116146e017f35fa006b7ab569f62e"
+}

@@ -8,6 +8,7 @@ pub mod config;
 pub mod error;
 pub mod routes;
 pub mod state;
+pub mod storage;
 
 use axum::{routing::get, Router};
 use tower_http::trace::TraceLayer;

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO player_scores (player_id, best_score, best_seq)\n        VALUES ($1, $2, $3)\n        ON CONFLICT (player_id) DO UPDATE\n            SET best_score = EXCLUDED.best_score,\n                best_seq   = EXCLUDED.best_seq,\n                updated_at = now()\n            WHERE EXCLUDED.best_score > player_scores.best_score\n               OR (EXCLUDED.best_score = player_scores.best_score\n                   AND EXCLUDED.best_seq < player_scores.best_seq)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c06f588ad43ee4cd3cc48fd2cdb62c8141b38bdafd553a6877830cae79fbd4c"
+}
