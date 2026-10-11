@@ -24,8 +24,13 @@ pub enum ConfigError {
 
 impl Config {
     /// Read configuration from the process environment.
+    ///
+    /// Uses `vars_os` so a non-UTF-8 environment value cannot panic startup.
     pub fn from_env() -> Result<Self, ConfigError> {
-        Self::from_vars(std::env::vars().collect())
+        let vars = std::env::vars_os()
+            .filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)))
+            .collect();
+        Self::from_vars(vars)
     }
 
     /// Build configuration from an explicit variable map (used by tests).
@@ -53,7 +58,7 @@ impl Config {
 
 fn required(vars: &HashMap<String, String>, name: &'static str) -> Result<String, ConfigError> {
     match vars.get(name) {
-        Some(value) if !value.is_empty() => Ok(value.clone()),
+        Some(value) if !value.trim().is_empty() => Ok(value.clone()),
         _ => Err(ConfigError::Missing(name)),
     }
 }

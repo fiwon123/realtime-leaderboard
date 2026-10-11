@@ -13,6 +13,8 @@ use serde::Serialize;
 pub enum ApiError {
     #[error("resource not found")]
     NotFound,
+    /// Caller-facing validation message. Only put text here that is safe to
+    /// show a client — never an upstream/internal error's `to_string()`.
     #[error("bad request: {0}")]
     BadRequest(String),
     #[error("service unavailable")]
