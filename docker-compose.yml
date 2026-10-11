@@ -1,0 +1,73 @@
+# Dev sandbox compose file for realtime-leaderboard.
+
+name: realtime-leaderboard
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["./scripts/dev-entrypoint.sh"]
+    ports:
+      # Host port only; the container port is fixed. The host side is overridable
+      # per project via HOST_PORT so two dev sandboxes can run at once — two
+      # containers publishing the same host port means the second cannot program
+      # its mapping and can be left with no network attachment at all.
+      # 8080 and 8081 are held by sibling projects; 8082 is ours.
+      - "${HOST_PORT:-8082}:8080"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-realtime_leaderboard}
+      - REDIS_URL=redis://redis:6379
+      - GH_TOKEN=${GH_TOKEN:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - HOME=/home/devuser
+    volumes:
+      - .:/workspace:cached
+      - ${HOST_HOME:-${HOME}}/.config/gh:/home/devuser/.config/gh:ro
+      - ${HOST_HOME:-${HOME}}/.opencode/bin/opencode:/usr/local/bin/opencode:ro
+      - ${HOST_HOME:-${HOME}}/.config/opencode:/home/devuser/.config/opencode:ro
+      - ${HOST_HOME:-${HOME}}/.gitconfig:/home/devuser/.gitconfig:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    tty: true
+    stdin_open: true
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-realtime_leaderboard}
+    ports:
+      # 5432 collides with a host Postgres; publish on 5433 by default.
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-realtime_leaderboard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      # 6379 collides with a host Redis; publish on 6380 by default.
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
