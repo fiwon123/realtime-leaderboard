@@ -2,3 +2,4 @@
 
 pub mod ingest;
 pub mod ranking;
+pub mod rebuild;
