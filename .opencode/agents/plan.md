@@ -47,11 +47,15 @@ Do NOT spawn build, or any other subagents that can edit files or run bash comma
 
 **Never spawn `build`.** It has `edit: allow` and broad bash permissions, so delegating to it would let this read-only mode modify the repository through a subagent — defeating `edit: deny` by a route nothing enforces. The `plan` → `build` handoff is a user action, not a tool call.
 
-If you adopt the optional `backend`, `frontend`, or `visual` agents from
-`templates/`, add each to this list **and** to your `task` permission in
-`opencode.json` at the same time. An agent listed here that the config denies is
-instructed to use a tool it cannot reach; an agent permitted here but absent from
-this list goes unused.
+The configured read-only subagents are **explore**, **reviewer**, and
+**visual**; your `task` permission allows exactly these and denies everything
+else. `visual` only inspects captures, so it is safe here. `frontend`, `backend`,
+`tester`, and `build` can edit files or run bash, so they stay denied — the
+`plan` → implementation handoff is a user action, not a tool call.
+
+An agent listed here that the config denies is instructed to use a tool it cannot
+reach; an agent permitted here but absent from this list goes unused. Add any new
+read-only subagent to both places in the same commit.
 
 ## Do NOT
 

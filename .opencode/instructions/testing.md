@@ -61,12 +61,19 @@ cargo clippy --all-targets --locked -- -D warnings
 
 ## Visual checks
 
-This project has no user interface yet — there is nothing to screenshot, and no
-`visual` subagent is configured. Visual checks **do not apply** to the current
-scope.
+The frontend is a real UI, so visual checks apply to changes that affect it.
+They follow the capture/look/act rule: **the main agent captures, the `visual`
+subagent looks, the main agent acts on the findings.** The flow is split so no
+agent claims more than it can see.
 
-When the frontend lands, add a `visual` subagent (it ships in the templates) and
-follow the capture/look/act rule: **the main agent captures, the `visual` subagent
-looks, the main agent acts on the findings.** Never report a visual conclusion
-the `visual` subagent has not actually returned; if a review fails or is
-rate-limited, say the state is unverified and retry in a smaller batch.
+1. **Capture** (main agent): run the app, drive the state under test — submit a
+   score, look up a rank, page the leaderboard — and save screenshots to files.
+2. **Look** (`visual` subagent): hand those image paths to the `visual` subagent
+   (Task tool) and let it report what it sees against its checklist.
+3. **Act** (main agent): fix what it reported, then re-capture if the fix changes
+   the UI.
+
+Never report a visual conclusion the `visual` subagent has not actually returned.
+If a review fails or is rate-limited, say the state is unverified and retry in a
+smaller batch. If no capture tool is available, say the visual state is
+**unverified** — do not infer the UI from source and call it checked.
