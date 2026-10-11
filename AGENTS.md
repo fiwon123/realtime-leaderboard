@@ -245,13 +245,8 @@ Agent definitions live in `opencode.json` and `.opencode/agents/`:
 - **reviewer** (subagent): Reviews code for bugs, security, and regressions.
 - **backend** (subagent): Implements `backend/` routes, services, and ranking logic; `edit` is scoped to `backend/**`.
 - **tester** (subagent): Writes and runs tests; `edit` is scoped to test files and fixtures.
-
-`frontend` and `visual` still ship as templates and are **not configured here**.
-The frontend directory now exists, but the `frontend` agent (scoped to
-`frontend/**`) and the `visual` QA agent, plus their `task` permission entries,
-are added in a follow-up issue so they do not ride in on the first frontend
-commit. A subagent whose `edit` scope points at a directory that does not exist
-is an expensive way to say nothing.
+- **frontend** (subagent): Implements `frontend/` UI, typed API client, and components; `edit` is scoped to `frontend/**`.
+- **visual** (subagent): Reviews UI screenshots for visual defects without editing.
 
 Each agent's instructions live in exactly one place: the body of
 `.opencode/agents/<name>.md`. Model, mode, and permissions live in `opencode.json`.

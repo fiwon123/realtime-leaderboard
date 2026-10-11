@@ -104,7 +104,9 @@
         "task": {
           "*": "deny",
           "explore": "allow",
-          "reviewer": "allow"
+          "reviewer": "allow",
+          "frontend": "allow",
+          "visual": "allow"
         },
         "skill": {
           "*": "allow"
@@ -147,7 +149,8 @@
         "task": {
           "*": "deny",
           "explore": "allow",
-          "reviewer": "allow"
+          "reviewer": "allow",
+          "visual": "allow"
         },
         "skill": {
           "*": "allow"
@@ -278,6 +281,60 @@
           "*.env.*": "deny",
           "* .env.*": "deny",
           "*/.env.*": "deny"
+        }
+      }
+    },
+    "frontend": {
+      "description": "Implements frontend UI, typed API client, and components",
+      "mode": "subagent",
+      "model": "opencode/big-pickle",
+      "permission": {
+        "edit": {
+          "frontend/**": "allow"
+        },
+        "bash": {
+          "*": "ask",
+          "cd frontend*": "allow",
+          "npm*": "allow",
+          "npx*": "allow",
+          "node*": "allow",
+          "printenv*": "deny",
+          "env": "deny",
+          "env *": "deny",
+          "docker compose config*": "deny",
+          "docker-compose config*": "deny",
+          "docker * config*": "deny",
+          "docker * env": "deny",
+          "docker * env *": "deny",
+          "docker inspect*": "deny",
+          "*.env": "deny",
+          "*.envrc": "deny",
+          "* .env": "deny",
+          "* .envrc": "deny",
+          "*/.env": "deny",
+          "*/.envrc": "deny",
+          "* .env*": "deny",
+          "*/.env*": "deny",
+          "* .envrc*": "deny",
+          "*/.envrc*": "deny",
+          "*.env.*": "deny",
+          "* .env.*": "deny",
+          "*/.env.*": "deny"
+        },
+        "skill": {
+          "*": "allow"
+        }
+      }
+    },
+    "visual": {
+      "description": "Reviews UI screenshots for visual defects without editing",
+      "mode": "subagent",
+      "model": "opencode/mimo-v2.6-flash-free",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "skill": {
+          "*": "allow"
         }
       }
     }

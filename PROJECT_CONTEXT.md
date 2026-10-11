@@ -92,10 +92,10 @@ frontend/   # React + TypeScript app: score submit, rank lookup, leaderboard
 - sqlx checks queries at compile time, which needs a live database or a committed
   `.sqlx/` offline cache used with `SQLX_OFFLINE=true`. **Never gitignore
   `.sqlx/`** — it is what makes a build reproducible without a running database.
-- The frontend is now a real component: `frontend/` (React 19 + Vite + TS),
-  covered by `make check` and CI. The `frontend` and `visual` agents and visual
-  QA are still to be added — they ship as templates and are configured in a
-  follow-up issue, not with the first frontend commit.
+- The frontend is a real component: `frontend/` (React 19 + Vite + TS), covered
+  by `make check` and CI. The `frontend` and `visual` agents are configured in
+  `opencode.json` and `.opencode/agents/`, and visual QA follows the
+  capture/look/act rule in `.opencode/instructions/testing.md`.
 - The dev environment runs in Docker Compose (`db`, `redis`, `dev`); credentials
   reach the container as environment variables, never baked into the image.
 - Dev-sandbox host ports are overridable (`HOST_PORT`, the DB/Redis host ports,
