@@ -1,0 +1,4 @@
+/* Base reset + color scheme; layout lives in App.css. */
+html {
+  -webkit-text-size-adjust: 100%;
+}
