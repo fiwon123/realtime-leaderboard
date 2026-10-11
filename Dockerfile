@@ -40,6 +40,34 @@ RUN if [ -z "$TARGETARCH" ]; then \
     && rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_CLI_VERSION#v}_linux_${TARGETARCH}" \
     && gh --version
 
+# --- Node toolchain (frontend build/test tooling) -----------------------------
+# The frontend needs Node (Vite, Vitest, Playwright). Installed from the official,
+# checksum-verified dist tarball rather than a third-party apt repository, so the
+# image stays reproducible and needs no extra apt source. The major matches the
+# `node` pin in mise.toml so sandbox and host agree. Extraction into /usr/local
+# puts node/npm/npx on the existing PATH for every user.
+ARG NODE_VERSION=v22.23.3
+RUN if [ -z "$TARGETARCH" ]; then \
+      case "$(uname -m)" in \
+        x86_64|amd64) TARGETARCH=amd64 ;; \
+        aarch64|arm64) TARGETARCH=arm64 ;; \
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;; \
+      esac; \
+    fi \
+    && case "$TARGETARCH" in \
+         amd64) NODE_ARCH=x64 ;; \
+         arm64) NODE_ARCH=arm64 ;; \
+         *) echo "Unsupported architecture: $TARGETARCH" >&2; exit 1 ;; \
+       esac \
+    && NODE_TARBALL="node-${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz" \
+    && curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/${NODE_TARBALL}" -o "/tmp/${NODE_TARBALL}" \
+    && curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/SHASUMS256.txt" -o /tmp/SHASUMS256.txt \
+    && (cd /tmp && grep -F " ${NODE_TARBALL}" SHASUMS256.txt | sha256sum -c -) \
+    && tar -xzf "/tmp/${NODE_TARBALL}" -C /usr/local --strip-components=1 \
+    && rm -f "/tmp/${NODE_TARBALL}" /tmp/SHASUMS256.txt \
+    && node --version \
+    && npm --version
+
 # --- runtime user (matches the host uid/gid from docker-compose.yml) ---
 # The compose service runs as `user: "${HOST_UID}:${HOST_GID}"`. Without a
 # passwd entry for that uid (or a home it can write), interactive shells greet

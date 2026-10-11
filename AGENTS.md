@@ -96,6 +96,7 @@ reachable.
 - Edit Markdown, JSON, YAML, and Rust files
 - Run git and GitHub CLI commands
 - Run `cargo`, `rustfmt`, and `clippy` (once `backend/Cargo.toml` exists)
+- Run `node`, `npm`, and `npx` (the Node LTS toolchain, for the frontend)
 - Create and manage issues, PRs, and milestones
 - Validate configuration files
 
