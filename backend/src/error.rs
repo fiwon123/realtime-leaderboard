@@ -23,6 +23,22 @@ pub enum ApiError {
     Internal(String),
 }
 
+impl From<sqlx::Error> for ApiError {
+    fn from(err: sqlx::Error) -> Self {
+        // The detail is logged and redacted on the wire by `into_response`.
+        ApiError::Internal(format!("database error: {err}"))
+    }
+}
+
+// Redis is a projection on the ingest path (see `services::ingest`), where its
+// errors are logged rather than surfaced. This conversion is for read paths,
+// where Redis is required to answer and an outage is a server error.
+impl From<redis::RedisError> for ApiError {
+    fn from(err: redis::RedisError) -> Self {
+        ApiError::Internal(format!("redis error: {err}"))
+    }
+}
+
 impl ApiError {
     fn status(&self) -> StatusCode {
         match self {

@@ -5,10 +5,15 @@ PostgreSQL for durable score events and Redis sorted sets for live rankings.
 
 ## Status
 
-**Scaffold only.** The AI-agent workflow configuration ships before the
-application code; the first features land as their own issues. See
-`PROJECT_CONTEXT.md` for the project brief and `AGENTS.md` for how agents work
-in this repository.
+**Early.** The score-events schema and the `POST /scores` ingest endpoint are in
+place; rank and leaderboard read endpoints, and a ranking-rebuild tool, are
+still landing as their own issues. See `PROJECT_CONTEXT.md` for the project
+brief and `AGENTS.md` for how agents work in this repository.
+
+Endpoints so far:
+
+- `GET /healthz` — liveness/readiness for Postgres and Redis
+- `POST /scores` — submit a score event (idempotent on `event_id`)
 
 ## Stack
 

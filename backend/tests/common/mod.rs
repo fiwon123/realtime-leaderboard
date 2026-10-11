@@ -3,6 +3,11 @@
 //! Integration tests need Postgres and Redis. `try_state` returns `None` when
 //! the services are unreachable so a bare `cargo test` stays green on a machine
 //! with nothing running (see `.opencode/instructions/testing.md`).
+//!
+//! Each integration-test binary includes this module in full, so a helper used
+//! by one binary is "unused" in the others. Suppress that per-binary dead-code
+//! noise rather than splitting the helpers per test.
+#![allow(dead_code)]
 
 use realtime_leaderboard::AppState;
 

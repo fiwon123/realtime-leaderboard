@@ -7,10 +7,12 @@
 pub mod config;
 pub mod error;
 pub mod routes;
+pub mod services;
 pub mod state;
 pub mod storage;
 
-use axum::{routing::get, Router};
+use axum::routing::{get, post};
+use axum::Router;
 use tower_http::trace::TraceLayer;
 
 pub use config::Config;
@@ -20,6 +22,7 @@ pub use state::AppState;
 pub fn app(state: AppState) -> Router {
     Router::new()
         .route("/healthz", get(routes::health::healthz))
+        .route("/scores", post(routes::scores::submit_score))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

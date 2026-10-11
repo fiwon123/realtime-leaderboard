@@ -1,8 +1,11 @@
 //! Queries over `score_events` (durable log) and `player_scores` (materialized
 //! best-per-player standing). Ranking itself is served from Redis; Postgres is
 //! the durable source of truth these rows are rebuilt from.
+//!
+//! Per-row functions take an executor so callers can compose them inside a
+//! transaction; the whole-table scan takes the pool directly.
 
-use sqlx::PgPool;
+use sqlx::{PgExecutor, PgPool};
 
 /// A player's best standing, as materialized in Postgres.
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
@@ -14,12 +17,15 @@ pub struct PlayerBest {
 
 /// Insert a score event, returning its `seq` when newly inserted or `None` when
 /// the `event_id` was already present (a replay under at-least-once delivery).
-pub async fn insert_event(
-    pool: &PgPool,
+pub async fn insert_event<'e, E>(
+    executor: E,
     event_id: uuid::Uuid,
     player_id: &str,
     score: i64,
-) -> sqlx::Result<Option<i64>> {
+) -> sqlx::Result<Option<i64>>
+where
+    E: PgExecutor<'e>,
+{
     let row = sqlx::query!(
         r#"
         INSERT INTO score_events (event_id, player_id, score)
@@ -31,7 +37,7 @@ pub async fn insert_event(
         player_id,
         score,
     )
-    .fetch_optional(pool)
+    .fetch_optional(executor)
     .await?;
 
     Ok(row.map(|row| row.seq))
@@ -42,12 +48,15 @@ pub async fn insert_event(
 ///
 /// Returns `true` when a row was inserted or updated, `false` when the existing
 /// standing already dominates.
-pub async fn upsert_player_best(
-    pool: &PgPool,
+pub async fn upsert_player_best<'e, E>(
+    executor: E,
     player_id: &str,
     score: i64,
     seq: i64,
-) -> sqlx::Result<bool> {
+) -> sqlx::Result<bool>
+where
+    E: PgExecutor<'e>,
+{
     let result = sqlx::query!(
         r#"
         INSERT INTO player_scores (player_id, best_score, best_seq)
@@ -64,14 +73,17 @@ pub async fn upsert_player_best(
         score,
         seq,
     )
-    .execute(pool)
+    .execute(executor)
     .await?;
 
     Ok(result.rows_affected() == 1)
 }
 
 /// Fetch a single player's materialized standing, if any.
-pub async fn player_best(pool: &PgPool, player_id: &str) -> sqlx::Result<Option<PlayerBest>> {
+pub async fn player_best<'e, E>(executor: E, player_id: &str) -> sqlx::Result<Option<PlayerBest>>
+where
+    E: PgExecutor<'e>,
+{
     sqlx::query_as!(
         PlayerBest,
         r#"
@@ -81,7 +93,7 @@ pub async fn player_best(pool: &PgPool, player_id: &str) -> sqlx::Result<Option<
         "#,
         player_id,
     )
-    .fetch_optional(pool)
+    .fetch_optional(executor)
     .await
 }
 
