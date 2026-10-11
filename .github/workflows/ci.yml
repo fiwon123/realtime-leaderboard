@@ -60,6 +60,14 @@ jobs:
       - name: Build
         run: cargo build --locked
 
+      - name: OpenAPI spec is up to date
+        # Regenerate the committed spec and fail if it changed: the checked-in
+        # document must match what the handler annotations produce, so it can
+        # never drift from the code.
+        run: |
+          cargo run --locked --bin openapi
+          git --no-pager diff --exit-code -- openapi.json
+
 # A `paths:` filter that the change does not touch means this workflow does not
 # trigger at all, and a triggered run whose jobs are all gated out reports
 # `skipped`, not `passed`. Skipped is not passed: run `make check` locally

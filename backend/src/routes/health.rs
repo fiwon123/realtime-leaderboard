@@ -8,6 +8,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Serialize;
 use tokio::time::timeout;
+use utoipa::ToSchema;
 
 use crate::state::AppState;
 
@@ -15,14 +16,25 @@ use crate::state::AppState;
 /// hung dependency cannot make `/healthz` itself hang.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(2);
 
-#[derive(Serialize)]
-struct HealthBody {
-    status: &'static str,
-    postgres: bool,
-    redis: bool,
+#[derive(Serialize, ToSchema)]
+pub struct HealthBody {
+    /// `"ok"` when both stores answer, `"degraded"` otherwise.
+    #[schema(example = "ok")]
+    pub status: &'static str,
+    pub postgres: bool,
+    pub redis: bool,
 }
 
 /// `GET /healthz` — 200 when Postgres and Redis both respond, 503 otherwise.
+#[utoipa::path(
+    get,
+    path = "/healthz",
+    responses(
+        (status = OK, description = "Postgres and Redis both responding", body = HealthBody),
+        (status = SERVICE_UNAVAILABLE, description = "At least one backing store is unreachable", body = HealthBody),
+    ),
+    tag = "health",
+)]
 pub async fn healthz(State(state): State<AppState>) -> impl IntoResponse {
     let postgres = matches!(
         timeout(PROBE_TIMEOUT, sqlx::query("SELECT 1").execute(&state.db)).await,

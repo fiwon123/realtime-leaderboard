@@ -6,6 +6,7 @@
 
 pub mod config;
 pub mod error;
+pub mod openapi;
 pub mod routes;
 pub mod services;
 pub mod state;
@@ -14,6 +15,8 @@ pub mod storage;
 use axum::routing::{get, post};
 use axum::Router;
 use tower_http::trace::TraceLayer;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub use config::Config;
 pub use state::AppState;
@@ -21,6 +24,10 @@ pub use state::AppState;
 /// Build the application router. Kept free of I/O so tests can construct it.
 pub fn app(state: AppState) -> Router {
     Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url(
+            "/swagger-ui/api-docs/openapi.json",
+            openapi::ApiDoc::openapi(),
+        ))
         .route("/healthz", get(routes::health::healthz))
         .route("/scores", post(routes::scores::submit_score))
         .route("/players/{player_id}/rank", get(routes::rank::get_rank))
