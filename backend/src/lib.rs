@@ -23,6 +23,8 @@ pub fn app(state: AppState) -> Router {
     Router::new()
         .route("/healthz", get(routes::health::healthz))
         .route("/scores", post(routes::scores::submit_score))
+        .route("/players/{player_id}/rank", get(routes::rank::get_rank))
+        .route("/leaderboard", get(routes::leaderboard::get_leaderboard))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

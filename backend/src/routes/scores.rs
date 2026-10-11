@@ -11,10 +11,11 @@ use crate::error::ApiError;
 use crate::services::ingest::ingest_score;
 use crate::state::AppState;
 
+use super::validate_player_id;
+
 /// Largest score the ranking encoding can order faithfully; must match the
 /// `score_events` / `player_scores` CHECK constraints in `0001_init.sql`.
 const MAX_SCORE: i64 = 1_000_000_000;
-const MAX_PLAYER_ID_LEN: usize = 128;
 
 #[derive(Debug, Deserialize)]
 pub struct ScoreEvent {
@@ -59,14 +60,7 @@ pub async fn submit_score(
 }
 
 fn validate(event: &ScoreEvent) -> Result<(), ApiError> {
-    if event.player_id.trim().is_empty() {
-        return Err(ApiError::BadRequest("player_id must not be empty".into()));
-    }
-    if event.player_id.len() > MAX_PLAYER_ID_LEN {
-        return Err(ApiError::BadRequest(format!(
-            "player_id must be at most {MAX_PLAYER_ID_LEN} bytes"
-        )));
-    }
+    validate_player_id(&event.player_id)?;
     if !(0..=MAX_SCORE).contains(&event.score) {
         return Err(ApiError::BadRequest(format!(
             "score must be between 0 and {MAX_SCORE}"
@@ -78,6 +72,7 @@ fn validate(event: &ScoreEvent) -> Result<(), ApiError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::routes::MAX_PLAYER_ID_LEN;
 
     fn event(player_id: &str, score: i64) -> ScoreEvent {
         ScoreEvent {
