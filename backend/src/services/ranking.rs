@@ -83,10 +83,13 @@ pub async fn rank_of(
         .query_async(conn)
         .await?;
 
-    Ok(Some((
-        position as u64 + 1,
-        decode_score(composite.unwrap_or_default()),
-    )))
+    // A member disappearing between the two commands (concurrent removal) must
+    // read as "no standing" — never as a fabricated zero score.
+    let Some(composite) = composite else {
+        return Ok(None);
+    };
+
+    Ok(Some((position as u64 + 1, decode_score(composite))))
 }
 
 /// The board from `start` to `stop` (inclusive), highest first, as

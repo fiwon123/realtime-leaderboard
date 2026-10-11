@@ -3,12 +3,13 @@
 use axum::extract::{Path, State};
 use axum::Json;
 use serde::Serialize;
+use tokio::time::timeout;
 
 use crate::error::ApiError;
 use crate::services::ranking;
 use crate::state::AppState;
 
-use super::validate_player_id;
+use super::{validate_player_id, READ_TIMEOUT};
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 pub struct RankResponse {
@@ -26,7 +27,11 @@ pub async fn get_rank(
     validate_player_id(&player_id)?;
 
     let mut conn = state.redis.clone();
-    match ranking::rank_of(&mut conn, &player_id).await? {
+    let result = timeout(READ_TIMEOUT, ranking::rank_of(&mut conn, &player_id))
+        .await
+        .map_err(|_elapsed| ApiError::Unavailable)??;
+
+    match result {
         Some((rank, score)) => Ok(Json(RankResponse {
             player_id,
             rank,
