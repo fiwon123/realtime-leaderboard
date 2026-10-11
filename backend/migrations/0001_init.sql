@@ -28,5 +28,6 @@ CREATE TABLE player_scores (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Supports the materialized-standing scan / rebuild ordering.
+-- Supports ranking-order scans from Postgres (e.g. a cold-start / fallback
+-- read). The Redis path is primary; rebuild scans order by player_id (PK).
 CREATE INDEX player_scores_ranking_idx ON player_scores (best_score DESC, best_seq ASC);

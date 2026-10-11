@@ -115,5 +115,38 @@ async fn all_player_bests_returns_written_rows() {
     let all = all_player_bests(&state.db).await.unwrap();
     assert!(all.iter().any(|row| row.player_id == player));
 
+    let ids: Vec<_> = all.iter().map(|row| row.player_id.clone()).collect();
+    let mut sorted = ids.clone();
+    sorted.sort();
+    assert_eq!(ids, sorted, "all_player_bests must be ordered by player_id");
+
     cleanup(&state.db, Uuid::nil(), &player).await;
+}
+
+#[tokio::test]
+async fn player_best_is_none_for_unknown_player() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let player = unique_player();
+    assert!(player_best(&state.db, &player).await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn out_of_range_scores_are_rejected() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let event_id = Uuid::new_v4();
+    let player = unique_player();
+
+    let too_high = insert_event(&state.db, event_id, &player, 1_000_000_001).await;
+    assert!(too_high.is_err(), "score above the cap must be rejected");
+
+    let negative = upsert_player_best(&state.db, &player, -1, 1).await;
+    assert!(negative.is_err(), "negative score must be rejected");
+
+    cleanup(&state.db, event_id, &player).await;
 }
