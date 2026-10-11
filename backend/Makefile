@@ -14,6 +14,7 @@ check:
 	elif [ ! -f Cargo.toml ]; then \
 		echo "no Cargo.toml here yet -- Rust checks SKIPPED (skipped is not passed)"; \
 	else \
+		set -e; \
 		SQLX_OFFLINE=true cargo fmt --check; \
 		SQLX_OFFLINE=true cargo clippy --locked --all-targets -- -D warnings; \
 		SQLX_OFFLINE=true cargo test --locked; \
