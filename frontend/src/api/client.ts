@@ -9,7 +9,9 @@ import type {
 // proxies to the API (see vite.config.ts), so there is no cross-origin traffic
 // and the backend needs no CORS layer. Point at an absolute API with
 // `VITE_API_BASE_URL` when building for a different host.
-export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
+export const API_BASE_URL: string = (
+  import.meta.env.VITE_API_BASE_URL ?? ''
+).replace(/\/+$/, '')
 
 /** A failed API call: `status` is the HTTP status, `message` the server's error. */
 export class ApiError extends Error {
@@ -44,12 +46,16 @@ async function errorMessage(response: Response): Promise<string> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const url = resolveUrl(path)
+  // Only POSTs carry a body, so only they declare a content type.
+  const headers: Record<string, string> = {}
+  if (init?.body !== undefined) {
+    headers['content-type'] = 'application/json'
+  }
+
   let response: Response
   try {
-    response = await fetch(resolveUrl(path), {
-      ...init,
-      headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
-    })
+    response = await fetch(url, { ...init, headers })
   } catch {
     throw new ApiError(0, 'Could not reach the API. Is the backend running?')
   }

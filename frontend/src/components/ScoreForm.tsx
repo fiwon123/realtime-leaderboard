@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, submitScore } from '../api/client'
 import type { ScoreEventResponse } from '../api/types'
@@ -16,6 +16,14 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  // The `event_id` for the submission currently being attempted, keyed by the
+  // values it belongs to. Reusing it across retries makes a resent request an
+  // idempotent replay (`200` + `duplicate: true`) rather than a second event,
+  // which matters when a response is lost after the server already stored the
+  // event. It is cleared on success, so the next submission is a new event, and
+  // regenerated when the player or score changes.
+  const pending = useRef<{ key: string; eventId: string } | null>(null)
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
@@ -27,23 +35,28 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
       setError('Enter a player id.')
       return
     }
-    if (!Number.isInteger(parsedScore)) {
+    if (score.trim() === '' || !Number.isInteger(parsedScore)) {
       setError('Enter a whole-number score.')
       return
     }
 
+    const key = `${player}\u0000${parsedScore}`
+    const eventId =
+      pending.current?.key === key ? pending.current.eventId : newEventId()
+    pending.current = { key, eventId }
+
     setBusy(true)
     try {
-      // A fresh event_id per submit: a double-click replays the same event and
-      // the API answers 200 with `duplicate: true` instead of double-counting.
       const response = await submitScore({
-        event_id: newEventId(),
+        event_id: eventId,
         player_id: player,
         score: parsedScore,
       })
+      pending.current = null // Success: the next submission is a new event.
       setResult(response)
       onSubmitted?.()
     } catch (err) {
+      // Keep `pending` intact so a retry resends the same event_id.
       setError(
         err instanceof ApiError
           ? err.message

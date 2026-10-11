@@ -1,7 +1,10 @@
 /** RFC 4122 version 4 UUID, used as the idempotency key for a score event. */
 export function newEventId(): string {
   const cryptoObj: Crypto | undefined = globalThis.crypto
-  if (cryptoObj !== undefined && typeof cryptoObj.randomUUID === 'function') {
+  if (cryptoObj === undefined) {
+    throw new Error('Web Crypto is not available; cannot generate an event id.')
+  }
+  if (typeof cryptoObj.randomUUID === 'function') {
     return cryptoObj.randomUUID()
   }
 

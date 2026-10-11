@@ -5,7 +5,7 @@ exercises the three client flows end to end:
 
 - **Submit score** — `POST /scores` with a generated `event_id`
 - **Look up rank** — `GET /players/{player_id}/rank`
-- **Leaderboard** — `GET /leaderboard?limit=&offset=` with paging
+- **Leaderboard** — `GET /leaderboard?limit=&offset=`, top entries first
 
 The API contract is `backend/openapi.json`; request/response types are mirrored
 in `src/api/types.ts` (see "Types" below).
@@ -27,14 +27,19 @@ and build, so the frontend is covered by the same gate as the backend.
 
 ## Talking to the API
 
-In development the Vite server proxies the API routes (`/scores`,
-`/leaderboard`, `/players`, `/healthz`) to `http://localhost:8080`, so the
-browser only ever makes same-origin requests and no CORS layer is needed. The
-proxy target is fixed; run the backend on `:8080` (see the root README) or
-change it in `vite.config.ts`.
+In development Vite serves the app and proxies API requests to the backend, so
+the browser only ever makes same-origin requests and no CORS layer is needed. By
+default it targets `http://localhost:8080` (the in-sandbox backend); on a host
+the API is published on `8082`, so start the dev server with an explicit target:
+
+```bash
+API_PROXY_TARGET=http://localhost:8082 npm run dev
+```
 
 For a build served from somewhere else, set `VITE_API_BASE_URL` to the API's
-absolute URL; it defaults to same-origin (empty string). See `.env.example`.
+absolute URL; it defaults to same-origin (empty string). Vite reads it from
+`frontend/.env` for local runs, or from the root `.env` inside the compose
+sandbox (which forwards it). See the root `.env.example`.
 
 Inside the dev sandbox, run `npm run dev` from a `make shell` and open host port
 **5173** (`WEB_HOST_PORT` overrides it).

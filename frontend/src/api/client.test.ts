@@ -93,14 +93,18 @@ describe('getLeaderboard', () => {
 
   it('defaults to limit 10 and offset 0', async () => {
     let limit: string | null = null
+    let offset: string | null = null
     server.use(
       http.get('/leaderboard', ({ request }) => {
-        limit = new URL(request.url).searchParams.get('limit')
+        const url = new URL(request.url)
+        limit = url.searchParams.get('limit')
+        offset = url.searchParams.get('offset')
         return HttpResponse.json({ entries: [] })
       }),
     )
 
     await getLeaderboard()
     expect(limit).toBe('10')
+    expect(offset).toBe('0')
   })
 })
