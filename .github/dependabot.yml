@@ -37,3 +37,36 @@ updates:
       - "ci"
     commit-message:
       prefix: "ci"
+
+  # Frontend npm dependencies.
+  # `npm ci` is used in CI and `make check`, so a bump here must carry a
+  # matching package-lock.json change; Dependabot does that.
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "deps"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      testing:
+        patterns:
+          - "vitest"
+          - "jsdom"
+          - "msw"
+          - "@testing-library/*"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/plugin-react"
+          - "typescript"

@@ -47,6 +47,10 @@ Thumbs.db
 build/
 *.tar.gz
 
+# Node / frontend (frontend/.gitignore also covers these locally)
+node_modules/
+dist/
+
 # Docker
 docker-compose.override.yml
 

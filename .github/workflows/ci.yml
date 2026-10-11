@@ -1,16 +1,18 @@
-name: CI (Rust)
+name: CI
 
-# Rust CI for a backend crate. Standard toolchain only:
-# rustfmt, clippy, test, build -- no third-party linters, so it runs on any
-# Rust project unchanged. `Cargo.lock` is the lockfile, so every cargo command
-# passes `--locked`: a run then fails if the lock is missing or stale instead of
-# quietly resolving a dependency set nobody reviewed.
+# CI for the backend (Rust) and frontend (Node). Standard toolchains only:
+# rustfmt/clippy/test/build, and npm lint/typecheck/test/build -- no third-party
+# linters, so it runs on any project unchanged. Lockfiles are the source of
+# truth: cargo runs pass `--locked` and the frontend uses `npm ci`, so a run
+# fails if the lock is missing or stale instead of quietly resolving a
+# dependency set nobody reviewed.
 
 on:
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
   workflow_dispatch:
 
 concurrency:
@@ -67,6 +69,38 @@ jobs:
         run: |
           cargo run --locked --bin openapi
           git --no-pager diff --exit-code -- openapi.json
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        # Node LTS; the major matches mise.toml and the Dockerfile.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        # Lockfile-exact install; fails when package-lock.json is stale.
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
 
 # A `paths:` filter that the change does not touch means this workflow does not
 # trigger at all, and a triggered run whose jobs are all gated out reports
