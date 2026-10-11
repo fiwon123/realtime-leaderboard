@@ -72,9 +72,9 @@ The dev server proxies the API routes to the backend, so requests are same-origi
 and no CORS layer is needed. It targets `http://localhost:8080` by default (the
 in-sandbox backend); on a host the API is published on `8082`, so use
 `API_PROXY_TARGET=http://localhost:8082 npm run dev`. For a remote API set
-`VITE_API_BASE_URL` (see the root `.env.example`). Inside the sandbox, run
-`npm run dev` from a `make shell`, then open host port **5173** (`WEB_HOST_PORT`
-to override).
+`VITE_API_BASE_URL` (see the root `.env.example`). Inside the sandbox, `make dev-up`
+starts it for you (or `make dev-frontend` to restart just the UI); open host port
+**5173** (`WEB_HOST_PORT` to override).
 
 | Command | What it does |
 |---------|--------------|
@@ -101,10 +101,11 @@ frontend/   # React + TypeScript app: score submit, rank lookup, leaderboard
 ## Development
 
 ```bash
-make check        # backend (fmt + clippy + test + build) and frontend (lint + typecheck + test + build)
-make dev-up       # start Postgres, Redis, and the dev sandbox
-make shell        # shell inside the sandbox
-make opencode     # run opencode inside the sandbox
+make check          # backend (fmt + clippy + test + build) and frontend (lint + typecheck + test + build)
+make dev-up         # start Postgres, Redis, the dev sandbox, and the frontend (http://localhost:5173)
+make dev-frontend   # (re)start just the frontend dev server
+make shell          # shell inside the sandbox
+make opencode       # run opencode inside the sandbox
 ```
 
 Copy `.env.example` to `.env` for local (non-sandbox) runs. See `AGENTS.md` for

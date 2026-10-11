@@ -83,6 +83,12 @@ docker compose down          # Stop everything
 docker compose logs -f dev   # Tail the dev container
 ```
 
+`make dev-up` wraps `docker compose up -d --build` and additionally starts the
+frontend dev server inside the sandbox (`make dev-frontend` does just the latter,
+`make dev-frontend-log` tails Vite). The Vite server is reachable on host port
+**5173**; it starts before the API finishes compiling, so API calls fail until
+`cargo run` is up.
+
 ### Run All Checks
 
 ```bash

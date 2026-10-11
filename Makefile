@@ -2,7 +2,7 @@
 
 COMPONENTS := backend frontend
 
-.PHONY: help check clean dev-up dev-down dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
+.PHONY: help check clean dev-up dev-down dev-frontend dev-frontend-log dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
 
 # Extra flags for the opencode invocation. `make opencode-auto` /
 # `make dev-opencode-auto` set this to --auto, which auto-approves permissions
@@ -37,6 +37,21 @@ preflight:
 
 dev-up: preflight
 	@HOST_UID=$$(id -u) HOST_GID=$$(id -g) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) docker compose up -d --build
+	@$(MAKE) dev-frontend
+
+# Start the frontend dev server inside the running `dev` container. Vite binds
+# 0.0.0.0:5173 (host:true) and the compose file publishes that port, so it is
+# reachable at http://localhost:5173 (Vite falls back to the next free port if
+# 5173 is taken). The API is in the same container on :8080, the proxy target
+# Vite defaults to. The install runs in the foreground so a failure surfaces; the
+# server itself is detached and logs to /tmp/vite.log. Re-run to restart it.
+dev-frontend: preflight
+	@docker compose exec -T dev bash -lc 'cd /workspace/frontend && { [ -d node_modules ] || npm ci --no-audit --no-fund; }'
+	@docker compose exec -T -d dev bash -lc 'cd /workspace/frontend && exec npm run dev >/tmp/vite.log 2>&1'
+	@echo "frontend starting on http://localhost:$${WEB_HOST_PORT:-5173} (logs: make dev-frontend-log)"
+
+dev-frontend-log:
+	@docker compose exec dev tail -f /tmp/vite.log
 
 dev-down:
 	@docker compose down
