@@ -2,8 +2,8 @@
 //! best-per-player standing). Ranking itself is served from Redis; Postgres is
 //! the durable source of truth these rows are rebuilt from.
 //!
-//! Every function takes an executor so callers can compose them inside a
-//! transaction.
+//! Per-row functions take an executor so callers can compose them inside a
+//! transaction; the whole-table scan takes the pool directly.
 
 use sqlx::{PgExecutor, PgPool};
 

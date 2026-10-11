@@ -2,25 +2,36 @@
 //!
 //! A player's position is a total order over `(score, seq)`: higher score wins,
 //! and on equal score the earlier event (smaller `seq`) wins. Redis orders a
-//! sorted set by its `score`, so that pair is packed into one `f64`.
+//! sorted set by its `score` (an `f64`), so that pair is packed into one value.
 
 use redis::aio::ConnectionManager;
 
 /// Sorted-set key holding the single default leaderboard.
 pub const LEADERBOARD_KEY: &str = "leaderboard:default";
 
+/// Number of distinct tie-break levels in the fractional part.
+///
+/// `1e9` (the score ceiling) occupies 30 bits, leaving 22 fraction bits of the
+/// f64 mantissa. Using `2^22` levels makes the step between adjacent `seq`
+/// values `2^-22`, which is two ULPs at `score = 1e9` — so equal-score ordering
+/// stays exact for every representable score, independent of magnitude.
+const SEQ_LEVELS: i64 = 1 << 22;
+
 /// Composite Redis score for a standing.
 ///
-/// The integer part is the score; the fractional part is in `(0, 1]` and
-/// decreases as `seq` grows, so a smaller `seq` yields a larger value. Distinct
-/// integer scores differ by at least 1, so their ranges never overlap.
+/// The integer part is the score. The fraction decreases as `seq` grows, so a
+/// smaller `seq` yields a larger value; distinct integer scores differ by at
+/// least 1, so their ranges never overlap.
 ///
-/// f64 has a 52-bit mantissa, so the tie-break fraction stays distinct while
-/// `score <= 1e9` and `seq` is below roughly 10 million — beyond that, ties
-/// within one integer score may collapse. A follow-up can switch to a two-key
-/// scheme if a single board ever exceeds that.
+/// Smaller `seq` values are ordered exactly. Beyond [`SEQ_LEVELS`] (~4.2M)
+/// events the fraction saturates, so ties among much later events at the same
+/// score may collapse to one Redis score. A follow-up can switch to a two-key
+/// or lexicographic scheme if a single board ever exceeds that within-score
+/// depth.
 pub fn composite_score(score: i64, seq: i64) -> f64 {
-    score as f64 + 1.0 / (1.0 + seq as f64)
+    let rank = seq.clamp(1, SEQ_LEVELS - 1);
+    let fraction = (SEQ_LEVELS - rank) as f64 / SEQ_LEVELS as f64;
+    score as f64 + fraction
 }
 
 /// Integer score recovered from a composite value (for display).
@@ -71,11 +82,35 @@ mod tests {
     }
 
     #[test]
+    fn tie_break_is_exact_at_the_top_of_the_score_range() {
+        // Regression guard for the old `1/(1+seq)` encoding, which collapsed
+        // adjacent ties far below this score.
+        for score in [0, 1, 1_000_000, 1_000_000_000] {
+            assert!(
+                composite_score(score, 3_000_000) > composite_score(score, 3_000_001),
+                "adjacent tie broke at score {score}"
+            );
+            assert_eq!(decode_score(composite_score(score, 1)), score);
+            assert_eq!(decode_score(composite_score(score, 3_000_000)), score);
+        }
+    }
+
+    #[test]
     fn decode_recovers_the_integer_score() {
         assert_eq!(decode_score(composite_score(0, 1)), 0);
         assert_eq!(
             decode_score(composite_score(1_000_000_000, 7)),
             1_000_000_000
+        );
+    }
+
+    #[test]
+    fn seq_beyond_the_cap_saturates() {
+        // Documented limitation: once the tie-break levels are exhausted, extreme
+        // `seq` values map to the same fraction.
+        assert_eq!(
+            composite_score(100, SEQ_LEVELS),
+            composite_score(100, SEQ_LEVELS + 1)
         );
     }
 }

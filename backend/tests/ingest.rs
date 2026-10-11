@@ -231,3 +231,43 @@ async fn invalid_payloads_are_rejected() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert!(body["error"].is_string(), "expected a JSON error body");
 }
+
+#[tokio::test]
+async fn accepts_boundary_scores_and_player_ids() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let app = realtime_leaderboard::app(state.clone());
+
+    for score in [0, 1_000_000_000] {
+        let event_id = Uuid::new_v4();
+        let player = unique_player();
+        let (status, body) = post(
+            &app,
+            json!({ "event_id": event_id, "player_id": player, "score": score }),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::CREATED,
+            "score {score} must be accepted"
+        );
+        assert_eq!(body["score"], json!(score));
+        cleanup(&state, &[&player], &[event_id]).await;
+    }
+
+    let event_id = Uuid::new_v4();
+    let player = "x".repeat(128);
+    let (status, _) = post(
+        &app,
+        json!({ "event_id": event_id, "player_id": player, "score": 1 }),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "a 128-byte player_id must be accepted"
+    );
+    cleanup(&state, &[&player], &[event_id]).await;
+}

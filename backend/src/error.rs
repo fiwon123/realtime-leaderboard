@@ -30,6 +30,9 @@ impl From<sqlx::Error> for ApiError {
     }
 }
 
+// Redis is a projection on the ingest path (see `services::ingest`), where its
+// errors are logged rather than surfaced. This conversion is for read paths,
+// where Redis is required to answer and an outage is a server error.
 impl From<redis::RedisError> for ApiError {
     fn from(err: redis::RedisError) -> Self {
         ApiError::Internal(format!("redis error: {err}"))

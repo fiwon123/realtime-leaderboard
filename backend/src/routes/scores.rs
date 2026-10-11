@@ -11,8 +11,8 @@ use crate::error::ApiError;
 use crate::services::ingest::ingest_score;
 use crate::state::AppState;
 
-/// Largest score the ranking encoding can order faithfully; mirrored by the
-/// `score_events` / `player_scores` CHECK constraints.
+/// Largest score the ranking encoding can order faithfully; must match the
+/// `score_events` / `player_scores` CHECK constraints in `0001_init.sql`.
 const MAX_SCORE: i64 = 1_000_000_000;
 const MAX_PLAYER_ID_LEN: usize = 128;
 

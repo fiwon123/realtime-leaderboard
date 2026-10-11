@@ -5,12 +5,19 @@
 //! updated. A Redis failure is logged, not surfaced: the event is already
 //! durable, and ranking is reconciled by a later event or the rebuild binary.
 
+use std::time::Duration;
+
+use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::error::ApiError;
 use crate::services::ranking;
 use crate::state::AppState;
 use crate::storage::scores;
+
+/// A hung Redis must not pin the request: the projection is bounded and, on
+/// timeout, treated like any other projection failure.
+const RANKING_TIMEOUT: Duration = Duration::from_secs(2);
 
 /// Result of an ingest attempt.
 pub struct IngestOutcome {
@@ -41,13 +48,19 @@ pub async fn ingest_score(
 
     if let Some(best) = standing {
         let mut conn = state.redis.clone();
-        if let Err(err) =
-            ranking::apply_standing(&mut conn, player_id, best.best_score, best.best_seq).await
-        {
-            tracing::error!(
-                %err, %player_id,
-                "failed to update Redis ranking; a later event or rebuild will reconcile"
-            );
+        let projection =
+            ranking::apply_standing(&mut conn, player_id, best.best_score, best.best_seq);
+
+        match timeout(RANKING_TIMEOUT, projection).await {
+            Ok(Ok(())) => {}
+            Ok(Err(err)) => tracing::error!(
+                %err, ?player_id,
+                "failed to update Redis ranking; a later event or the planned rebuild will reconcile"
+            ),
+            Err(_elapsed) => tracing::error!(
+                ?player_id,
+                "timed out updating Redis ranking; a later event or the planned rebuild will reconcile"
+            ),
         }
     }
 
