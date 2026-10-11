@@ -13,13 +13,17 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 check: ## Run checks for all components
-	@for d in $(COMPONENTS); do \
+	@status=0; \
+	for d in $(COMPONENTS); do \
 	  echo "=== $$d ==="; \
-	  $(MAKE) -C $$d check 2>/dev/null || $(MAKE) check-local COMPONENT_DIR=$$d; \
-	done
-
-check-local:
-	@if [ -f $(COMPONENT_DIR)/Makefile ]; then $(MAKE) -C $(COMPONENT_DIR) check; else echo "ERROR: No Makefile in $(COMPONENT_DIR). Create one or remove it from COMPONENTS."; exit 1; fi
+	  if [ -f $$d/Makefile ]; then \
+	    $(MAKE) -C $$d check || status=1; \
+	  else \
+	    echo "ERROR: No Makefile in $$d. Create one or remove it from COMPONENTS."; \
+	    status=1; \
+	  fi; \
+	done; \
+	exit $$status
 
 clean: ## Remove build and cache artifacts
 	@echo "cleaning"
