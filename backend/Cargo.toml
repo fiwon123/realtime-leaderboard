@@ -5,6 +5,10 @@ edition = "2021"
 rust-version = "1.83"
 description = "Real-time leaderboard API backed by PostgreSQL and Redis"
 license = "MIT"
+# The crate ships three binaries (`openapi`, `rebuild`, and this API), so a bare
+# `cargo run` has no unambiguous target. Naming the API here keeps the documented
+# `cargo run` (AGENTS.md, the dev-sandbox entrypoint) working without `--bin`.
+default-run = "realtime-leaderboard"
 
 [dependencies]
 axum = "0.8"
