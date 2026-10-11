@@ -47,10 +47,17 @@ dev-up: preflight
 # only when the vite binary is missing, restarts any previous instance, starts
 # Vite detached, then waits for it to report ready — failing loudly otherwise.
 # Logs: /tmp/vite.log.
+#
+# The restart step matches the running Vite by argv (`node …/node_modules/.bin/vite`).
+# `pkill -f` also matches the shell running it, so the pattern is anchored on the
+# path separator (`/node_modules/[.]bin/vite`): the recipe's own command line has
+# no `/node_modules/` before the `-x node_modules/.bin/vite` test, so it cannot
+# self-match, while the target process still does. (The old `vite/bin/vite`
+# matched neither the real process nor — worse — killed the shell itself: exit 143.)
 dev-frontend: preflight
 	@i=0; while [ $$i -lt 30 ]; do docker compose exec -T dev true >/dev/null 2>&1 && break; sleep 1; i=$$((i+1)); done
 	@docker compose exec -T dev true >/dev/null 2>&1 || { echo "dev container is not running; run 'make dev-up' first" >&2; exit 1; }
-	@docker compose exec -T dev bash -lc 'pkill -f "vite/bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
+	@docker compose exec -T dev bash -lc 'pkill -f "/node_modules/[.]bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
 	@docker compose exec -T -d dev bash -lc 'cd /workspace/frontend && exec npm run dev >/tmp/vite.log 2>&1'
 	@i=0; while [ $$i -lt 30 ]; do \
 	  if docker compose exec -T dev grep -q "ready in" /tmp/vite.log 2>/dev/null; then \
