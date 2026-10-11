@@ -5,15 +5,34 @@ PostgreSQL for durable score events and Redis sorted sets for live rankings.
 
 ## Status
 
-**Early.** The score-events schema and the `POST /scores` ingest endpoint are in
-place; rank and leaderboard read endpoints, and a ranking-rebuild tool, are
-still landing as their own issues. See `PROJECT_CONTEXT.md` for the project
-brief and `AGENTS.md` for how agents work in this repository.
+**MVP features in place.** Score events are ingested durably and idempotently,
+rankings are served live from Redis, and a rebuild tool re-creates the Redis
+board from Postgres. See `PROJECT_CONTEXT.md` for the project brief and
+`AGENTS.md` for how agents work in this repository.
 
-Endpoints so far:
+## API
 
-- `GET /healthz` — liveness/readiness for Postgres and Redis
-- `POST /scores` — submit a score event (idempotent on `event_id`)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/healthz` | Liveness/readiness for Postgres and Redis |
+| `POST` | `/scores` | Submit a score event (idempotent on `event_id`) |
+| `GET`  | `/players/{player_id}/rank` | A player's 1-based position and best score |
+| `GET`  | `/leaderboard?limit=10&offset=0` | Page through the top of the board |
+
+`POST /scores` body: `{ "event_id": "<uuid>", "player_id": "<id>", "score": <0..=1_000_000_000> }`
+— `201` on a new event, `200` with `"duplicate": true` on a replay, `400` on an
+invalid payload. Scores are best-per-player; equal scores rank the earlier
+event first.
+
+### Ranking rebuild
+
+Redis is a projection of Postgres. If it drifts, recreate it from the source
+of truth:
+
+```bash
+cd backend
+cargo run --bin rebuild     # reads DATABASE_URL and REDIS_URL
+```
 
 ## Stack
 
