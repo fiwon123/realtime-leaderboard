@@ -27,6 +27,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             StartupError("failed to connect to Postgres")
         })?;
 
+    sqlx::migrate!("./migrations")
+        .run(&db)
+        .await
+        .map_err(|err| {
+            tracing::error!(error = %err, "failed to run migrations");
+            StartupError("failed to run migrations")
+        })?;
+
     let redis_client = redis::Client::open(config.redis_url.as_str()).map_err(|err| {
         tracing::error!(error = %err, "invalid REDIS_URL");
         StartupError("invalid REDIS_URL")

@@ -22,3 +22,17 @@ pub async fn try_state() -> Option<AppState> {
 
     Some(AppState { db, redis })
 }
+
+/// Like [`try_state`], but applies migrations first. Returns `None` when the
+/// services are unreachable so tests skip cleanly.
+///
+/// A migration failure is *not* swallowed into a skip: that would let a broken
+/// schema report green. Only the connection step is allowed to skip.
+pub async fn try_migrated_state() -> Option<AppState> {
+    let state = try_state().await?;
+    sqlx::migrate!("./migrations")
+        .run(&state.db)
+        .await
+        .expect("failed to apply migrations");
+    Some(state)
+}

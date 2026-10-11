@@ -24,6 +24,10 @@ permissions:
 jobs:
   rust:
     runs-on: ubuntu-latest
+    # sqlx's compile-time-checked queries read the committed `.sqlx/` cache
+    # instead of a live database, so CI needs no Postgres service.
+    env:
+      SQLX_OFFLINE: "true"
     defaults:
       run:
         working-directory: backend
