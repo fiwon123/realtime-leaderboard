@@ -42,13 +42,14 @@ pub struct LeaderboardResponse {
     get,
     path = "/leaderboard",
     params(
-        ("limit" = Option<u64>, Query, description = "Page size; defaults to 10, must be 1..=100"),
+        ("limit" = Option<u64>, Query, minimum = 1, maximum = 100, description = "Page size; defaults to 10, must be 1..=100"),
         ("offset" = Option<u64>, Query, description = "Number of entries to skip before the page; defaults to 0"),
     ),
     responses(
         (status = OK, description = "A page of the leaderboard, highest score first", body = LeaderboardResponse),
         (status = BAD_REQUEST, description = "limit outside 1..=100, or offset too large"),
-        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store unreachable"),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time"),
+        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed"),
     ),
     tag = "leaderboard",
 )]

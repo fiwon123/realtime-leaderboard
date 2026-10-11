@@ -57,7 +57,8 @@
             "schema": {
               "type": "integer",
               "format": "int64",
-              "minimum": 0
+              "maximum": 100,
+              "minimum": 1
             }
           },
           {
@@ -86,8 +87,11 @@
           "400": {
             "description": "limit outside 1..=100, or offset too large"
           },
+          "500": {
+            "description": "Leaderboard store failed"
+          },
           "503": {
-            "description": "Leaderboard store unreachable"
+            "description": "Leaderboard store did not answer in time"
           }
         }
       }
@@ -106,7 +110,9 @@
             "description": "Player id, 1..=128 bytes",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
             }
           }
         ],
@@ -127,8 +133,11 @@
           "404": {
             "description": "Player has no standing yet"
           },
+          "500": {
+            "description": "Leaderboard store failed"
+          },
           "503": {
-            "description": "Leaderboard store unreachable"
+            "description": "Leaderboard store did not answer in time"
           }
         }
       }
@@ -162,7 +171,7 @@
             }
           },
           "201": {
-            "description": "Event accepted and ranked",
+            "description": "Event stored durably; the live ranking is updated best-effort",
             "content": {
               "application/json": {
                 "schema": {
@@ -173,6 +182,9 @@
           },
           "400": {
             "description": "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"
+          },
+          "500": {
+            "description": "Could not store the event"
           }
         }
       }
@@ -280,12 +292,16 @@
           },
           "player_id": {
             "type": "string",
-            "example": "alice"
+            "example": "alice",
+            "maxLength": 128,
+            "minLength": 1
           },
           "score": {
             "type": "integer",
             "format": "int64",
-            "example": 100
+            "example": 100,
+            "maximum": 1000000000,
+            "minimum": 0
           }
         }
       },

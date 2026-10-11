@@ -26,12 +26,13 @@ pub struct RankResponse {
 #[utoipa::path(
     get,
     path = "/players/{player_id}/rank",
-    params(("player_id" = String, Path, description = "Player id, 1..=128 bytes")),
+    params(("player_id" = String, Path, min_length = 1, max_length = 128, description = "Player id, 1..=128 bytes")),
     responses(
         (status = OK, description = "The player's live standing", body = RankResponse),
         (status = BAD_REQUEST, description = "Blank or overlong player_id"),
         (status = NOT_FOUND, description = "Player has no standing yet"),
-        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store unreachable"),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time"),
+        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed"),
     ),
     tag = "leaderboard",
 )]

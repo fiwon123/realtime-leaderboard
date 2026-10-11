@@ -22,9 +22,9 @@ const MAX_SCORE: i64 = 1_000_000_000;
 pub struct ScoreEvent {
     #[schema(example = "10a60a3a-c86c-4427-ae39-2db5a38e0dbd")]
     pub event_id: Uuid,
-    #[schema(example = "alice")]
+    #[schema(example = "alice", min_length = 1, max_length = 128)]
     pub player_id: String,
-    #[schema(example = 100)]
+    #[schema(example = 100, minimum = 0, maximum = 1000000000)]
     pub score: i64,
 }
 
@@ -46,9 +46,10 @@ pub struct ScoreEventResponse {
     path = "/scores",
     request_body = ScoreEvent,
     responses(
-        (status = CREATED, description = "Event accepted and ranked", body = ScoreEventResponse),
+        (status = CREATED, description = "Event stored durably; the live ranking is updated best-effort", body = ScoreEventResponse),
         (status = OK, description = "Duplicate event_id — already ingested", body = ScoreEventResponse),
         (status = BAD_REQUEST, description = "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"),
+        (status = INTERNAL_SERVER_ERROR, description = "Could not store the event"),
     ),
     tag = "scores",
 )]

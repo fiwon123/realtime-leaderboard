@@ -19,4 +19,6 @@ check:
 		SQLX_OFFLINE=true cargo clippy --locked --all-targets -- -D warnings; \
 		SQLX_OFFLINE=true cargo test --locked; \
 		SQLX_OFFLINE=true cargo build --locked; \
+		SQLX_OFFLINE=true cargo run --quiet --locked --bin openapi; \
+		git diff --exit-code -- openapi.json; \
 	fi
