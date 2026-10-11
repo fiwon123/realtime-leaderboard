@@ -22,3 +22,42 @@ rustc-ice-*.txt
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# --- engineering-workflow additions ---
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.*
+!.env.example
+.envrc
+
+# Build
+*.log
+build/
+*.tar.gz
+
+# Docker
+docker-compose.override.yml
+
+# OpenCode
+.opencode/node_modules/
+# OpenCode session memory — agent-local state. It records in-flight work
+# (issue, branch, next action), which is per-machine and per-session by nature,
+# so it is never committed.
+.opencode/memory/
+.opencode/progress.md
+
+# NOTE: `.sqlx/` is deliberately NOT ignored. sqlx's offline query cache ships
+# with the repo so `cargo build` does not require a live database; ignoring it
+# makes every build a database requirement. See AGENTS.md -> Key Conventions.

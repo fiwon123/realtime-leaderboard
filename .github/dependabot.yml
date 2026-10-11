@@ -1,0 +1,39 @@
+version: 2
+updates:
+  # Rust crate dependencies.
+  # `--locked` is used everywhere in CI, so a bump here must carry a matching
+  # Cargo.lock change; Dependabot does that.
+  - package-ecosystem: "cargo"
+    directory: "/backend"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "rust"
+    commit-message:
+      prefix: "deps"
+    groups:
+      tokio:
+        patterns:
+          - "tokio*"
+          - "axum"
+          - "tower*"
+          - "hyper"
+      sqlx:
+        patterns:
+          - "sqlx*"
+
+  # GitHub Actions used by .github/workflows/ci.yml
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
