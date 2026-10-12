@@ -27,7 +27,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tower-http = { version = "0.6", features = ["trace"] }
+tower-http = { version = "0.7", features = ["trace"] }
 utoipa = { version = "5.5.0", features = ["uuid"] }
 # Newest Swagger UI that builds on the pinned 1.83 toolchain. Its `rust-embed
 # 8.13` transitive needs `sha2 0.11` (Rust 1.85+), so Cargo.lock holds the
