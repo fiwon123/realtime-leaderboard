@@ -11,10 +11,32 @@
   padding: var(--space-5) var(--space-4) 0;
 }
 
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .header-controls {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link-button:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
 }
 
 .accent-picker {
@@ -98,7 +120,8 @@ main {
       "board score"
       "board rank"
       "board stats"
-      "board seeder";
+      "board seeder"
+      "board about";
   }
 
   .panel-board {
@@ -115,6 +138,9 @@ main {
   }
   .panel-seeder {
     grid-area: seeder;
+  }
+  .panel-about {
+    grid-area: about;
   }
 }
 
@@ -396,13 +422,28 @@ tbody tr.leader:hover {
   margin-left: auto;
 }
 
-.app-footer a {
+.app-footer a,
+.app-footer .link-button {
   color: var(--accent);
   text-decoration: none;
 }
 
-.app-footer a:hover {
+.app-footer a:hover,
+.app-footer .link-button:hover {
   text-decoration: underline;
+  background: none;
+}
+
+/* About panel */
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.about-content p {
+  margin: 0;
 }
 
 /* Leaderboard paging */

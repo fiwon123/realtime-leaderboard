@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { About } from './components/About'
 import { AccentPicker } from './components/AccentPicker'
 import { DemoSeeder } from './components/DemoSeeder'
 import { Leaderboard } from './components/Leaderboard'
@@ -8,6 +9,10 @@ import { ScoreForm } from './components/ScoreForm'
 import { StatsPanel } from './components/StatsPanel'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Tutorial } from './components/Tutorial'
+import {
+  isTutorialDismissed,
+  resetTutorialDismissal,
+} from './lib/tutorial'
 import { getHealth } from './api/client'
 import type { HealthResponse } from './api/types'
 import { offsetForRank, pagingUrl, parsePaging } from './lib/paging'
@@ -37,6 +42,9 @@ function HealthBadge({ health }: { health: HealthResponse | null }) {
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [health, setHealth] = useState<HealthResponse | null>(null)
+  // Controlled by App so a nav link can reveal the tutorial again; seeded from
+  // the persisted dismissal so a reload after "Got it" stays hidden.
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDismissed())
   // Leaderboard paging lives here so the URL can reflect it and RankLookup can
   // drive it. It is seeded from (and kept in) the query string.
   const [paging, setPaging] = useState<Paging>(() =>
@@ -92,12 +100,28 @@ export default function App() {
     commitPaging({ ...paging, offset: offsetForRank(rank, paging.limit) })
   }
 
+  // Reveal the tutorial from a nav link: clear the persisted dismissal so it
+  // stays up, then scroll it into view.
+  function revealTutorial() {
+    resetTutorialDismissal()
+    setShowTutorial(true)
+    const heading = document.getElementById('tutorial-heading')
+    if (typeof heading?.scrollIntoView === 'function') {
+      heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <>
       <header className="app-header">
         <h1 className="brand">
           <Logo />
         </h1>
+        <nav className="header-nav" aria-label="Main">
+          <button type="button" className="link-button" onClick={revealTutorial}>
+            How to
+          </button>
+        </nav>
         <div className="header-controls">
           <HealthBadge health={health} />
           <AccentPicker />
@@ -108,7 +132,10 @@ export default function App() {
         <p className="tagline">
           Submit score events and read the live ranking.
         </p>
-        <Tutorial />
+        <Tutorial
+          visible={showTutorial}
+          onDismissed={() => setShowTutorial(false)}
+        />
         <div className="panels">
           <ScoreForm onSubmitted={bump} />
           <RankLookup onJumpToRank={jumpToRank} />
@@ -120,6 +147,7 @@ export default function App() {
             onLimitChange={changeLimit}
           />
           <StatsPanel />
+          <About showTutorialAgain={revealTutorial} />
           <DemoSeeder onSeeded={bump} />
         </div>
       </main>
@@ -127,6 +155,9 @@ export default function App() {
         <LogoMark className="footer-mark" />
         <span className="footer-note">Live rankings for every score</span>
         <nav className="footer-links" aria-label="Project links">
+          <button type="button" className="link-button" onClick={revealTutorial}>
+            How to
+          </button>
           <a href="/swagger-ui/">API docs</a>
           <a
             href="https://github.com/fiwon123/realtime-leaderboard"

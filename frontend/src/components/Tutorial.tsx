@@ -1,30 +1,32 @@
 import { useState } from 'react'
+import {
+  isTutorialDismissed,
+  persistTutorialDismissal,
+} from '../lib/tutorial'
 
-const STORAGE_KEY = 'tutorial-dismissed'
-
-function initiallyDismissed(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'true'
-  } catch {
-    return false
-  }
+interface TutorialProps {
+  /** Controlled visibility, owned by the parent so a nav link can reveal it. */
+  visible?: boolean
+  /** Called after the user dismisses it, so the parent can hide it. */
+  onDismissed?: () => void
 }
 
-/** A dismissible "how it works" strip; the dismissal persists locally. */
-export function Tutorial() {
-  const [dismissed, setDismissed] = useState(initiallyDismissed)
+/**
+ * A dismissible "how it works" strip. When `visible` is omitted it manages its
+ * own visibility from the persisted dismissal; when provided it is controlled.
+ */
+export function Tutorial({ visible, onDismissed }: TutorialProps) {
+  const [dismissed, setDismissed] = useState(isTutorialDismissed)
+  const shown = visible ?? !dismissed
 
-  if (dismissed) {
+  if (!shown) {
     return null
   }
 
   function dismiss() {
     setDismissed(true)
-    try {
-      localStorage.setItem(STORAGE_KEY, 'true')
-    } catch {
-      // No persistence available; it stays dismissed for this session.
-    }
+    persistTutorialDismissal()
+    onDismissed?.()
   }
 
   return (
