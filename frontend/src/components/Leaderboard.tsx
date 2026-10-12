@@ -1,10 +1,29 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { ApiError, getLeaderboard } from '../api/client'
 import type { LeaderboardEntry } from '../api/types'
 import { PAGE_SIZES, type PageSize } from '../lib/paging'
+import { formatRelative } from '../lib/time'
 import { LogoMark } from './Logo'
 import { Skeleton } from './Skeleton'
+
+/**
+ * A small ▲/▼ shown next to a rank when a refresh moved that player. The glyph
+ * is decorative; the screen-reader text carries the actual direction/distance.
+ */
+function RankMovement({ delta }: { delta: number | undefined }) {
+  if (delta === undefined || delta === 0) {
+    return null
+  }
+  const up = delta > 0
+  const label = up ? `up ${delta}` : `down ${-delta}`
+  return (
+    <span className={`movement ${up ? 'up' : 'down'}`} title={label}>
+      <span aria-hidden="true">{up ? '▲' : '▼'}</span>
+      <span className="sr-only">{label}</span>
+    </span>
+  )
+}
 
 interface LeaderboardProps {
   /** Bump to force a reload (e.g. after a score is submitted). */
@@ -38,6 +57,17 @@ export function Leaderboard({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState(false)
+  // Per-player rank deltas for the most recent load (positive = moved up).
+  const [movements, setMovements] = useState<Record<string, number>>({})
+  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null)
+  // `now` ticks once a second so the freshness stamp ages without a reload.
+  const [now, setNow] = useState(() => Date.now())
+  // Snapshot of the previous successful load, keyed by `offset:limit`, so rank
+  // movement is only measured against the same page (paging resets the baseline).
+  const previousRanks = useRef<{
+    key: string
+    ranks: Map<string, number>
+  } | null>(null)
 
   // Controlled by the parent when it passes paging props, otherwise standalone.
   const offset = offsetProp ?? internalOffset
@@ -63,8 +93,30 @@ export function Leaderboard({
     async (from: number, size: number) => {
       try {
         const data = await getLeaderboard(size, from)
+        const key = `${from}:${size}`
+        const previous = previousRanks.current
+        const moved: Record<string, number> = {}
+        // Only compare against the same page; a paged/changed-size load is not
+        // a "movement" and would otherwise show misleading arrows.
+        if (previous !== null && previous.key === key) {
+          for (const entry of data.entries) {
+            const before = previous.ranks.get(entry.player_id)
+            if (before !== undefined && before !== entry.rank) {
+              moved[entry.player_id] = before - entry.rank
+            }
+          }
+        }
+        previousRanks.current = {
+          key,
+          ranks: new Map(
+            data.entries.map((entry) => [entry.player_id, entry.rank]),
+          ),
+        }
         setEntries(data.entries)
         setTotal(data.total ?? 0)
+        setMovements(moved)
+        setLastLoadedAt(Date.now())
+        setNow(Date.now())
         setError(null)
       } catch (err) {
         setError(
@@ -97,6 +149,15 @@ export function Leaderboard({
     }, autoRefreshMs)
     return () => clearInterval(id)
   }, [live, offset, limit, load, autoRefreshMs])
+
+  // Age the "last updated" stamp once a second; only once a load has landed.
+  useEffect(() => {
+    if (lastLoadedAt === null) {
+      return
+    }
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [lastLoadedAt])
 
   function refresh() {
     setLoading(true)
@@ -194,6 +255,12 @@ export function Leaderboard({
         <p className="muted live-hint">Auto-refreshing every 5 seconds.</p>
       )}
 
+      {lastLoadedAt !== null && (
+        <p className="muted updated-at">
+          Updated {formatRelative(now, lastLoadedAt)}
+        </p>
+      )}
+
       {error !== null && (
         <p role="alert" className="error">
           {error}
@@ -256,6 +323,7 @@ export function Leaderboard({
                   ) : (
                     entry.rank
                   )}
+                  <RankMovement delta={movements[entry.player_id]} />
                 </td>
                 <td>{entry.player_id}</td>
                 <td>{entry.score}</td>

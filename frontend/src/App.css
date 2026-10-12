@@ -239,6 +239,12 @@ section h2 {
   font-size: 0.85rem;
 }
 
+/* Freshness stamp; re-renders once a second as it ages. */
+.updated-at {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+}
+
 .theme-icon {
   display: block;
   flex: none;
@@ -444,6 +450,35 @@ tbody tr:last-child td {
 
 .medal-3 {
   background: linear-gradient(135deg, #f0c098, #b45309);
+}
+
+/* Rank movement after a refresh moved a player (glyph is decorative; the
+   .sr-only text carries the direction). */
+.movement {
+  margin-left: var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.movement.up {
+  color: var(--success);
+}
+
+.movement.down {
+  color: var(--error);
+}
+
+/* Available to assistive tech, removed from the visual layout. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 tbody tr.leader {
