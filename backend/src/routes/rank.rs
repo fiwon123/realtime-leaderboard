@@ -6,7 +6,7 @@ use serde::Serialize;
 use tokio::time::timeout;
 use utoipa::ToSchema;
 
-use crate::error::ApiError;
+use crate::error::{ApiError, ErrorBody};
 use crate::services::ranking;
 use crate::state::AppState;
 
@@ -29,10 +29,10 @@ pub struct RankResponse {
     params(("player_id" = String, Path, min_length = 1, max_length = 128, description = "Player id, 1..=128 bytes")),
     responses(
         (status = OK, description = "The player's live standing", body = RankResponse),
-        (status = BAD_REQUEST, description = "Blank or overlong player_id"),
-        (status = NOT_FOUND, description = "Player has no standing yet"),
-        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time"),
-        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed"),
+        (status = BAD_REQUEST, description = "Blank or overlong player_id", body = ErrorBody),
+        (status = NOT_FOUND, description = "Player has no standing yet", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time", body = ErrorBody),
+        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed", body = ErrorBody),
     ),
     tag = "leaderboard",
 )]

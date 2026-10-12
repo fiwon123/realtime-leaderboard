@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
 use utoipa::ToSchema;
 
-use crate::error::ApiError;
+use crate::error::{ApiError, ErrorBody};
 use crate::services::ranking;
 use crate::state::AppState;
 
@@ -50,9 +50,9 @@ pub struct LeaderboardResponse {
     ),
     responses(
         (status = OK, description = "A page of the leaderboard, highest score first", body = LeaderboardResponse),
-        (status = BAD_REQUEST, description = "limit outside 1..=100, or offset too large"),
-        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time"),
-        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed"),
+        (status = BAD_REQUEST, description = "limit outside 1..=100, or offset too large", body = ErrorBody),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time", body = ErrorBody),
+        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed", body = ErrorBody),
     ),
     tag = "leaderboard",
 )]

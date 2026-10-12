@@ -6,7 +6,7 @@ use serde::Serialize;
 use tokio::time::timeout;
 use utoipa::ToSchema;
 
-use crate::error::ApiError;
+use crate::error::{ApiError, ErrorBody};
 use crate::services::ranking;
 use crate::state::AppState;
 
@@ -26,8 +26,8 @@ pub struct StatsResponse {
     path = "/stats",
     responses(
         (status = OK, description = "Board size and peak score", body = StatsResponse),
-        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time"),
-        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed"),
+        (status = SERVICE_UNAVAILABLE, description = "Leaderboard store did not answer in time", body = ErrorBody),
+        (status = INTERNAL_SERVER_ERROR, description = "Leaderboard store failed", body = ErrorBody),
     ),
     tag = "leaderboard",
 )]

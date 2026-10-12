@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::error::{ApiError, ErrorBody};
 use crate::services::ingest::ingest_score;
 use crate::state::AppState;
 
@@ -48,8 +48,8 @@ pub struct ScoreEventResponse {
     responses(
         (status = CREATED, description = "Event stored durably; the live ranking is updated best-effort", body = ScoreEventResponse),
         (status = OK, description = "Duplicate event_id — already ingested", body = ScoreEventResponse),
-        (status = BAD_REQUEST, description = "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"),
-        (status = INTERNAL_SERVER_ERROR, description = "Could not store the event"),
+        (status = BAD_REQUEST, description = "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000", body = ErrorBody),
+        (status = INTERNAL_SERVER_ERROR, description = "Could not store the event", body = ErrorBody),
     ),
     tag = "scores",
 )]

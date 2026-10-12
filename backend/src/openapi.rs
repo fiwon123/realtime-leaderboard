@@ -7,6 +7,7 @@
 
 use utoipa::OpenApi;
 
+use crate::error::ErrorBody;
 use crate::routes::health::HealthBody;
 use crate::routes::leaderboard::{LeaderboardEntry, LeaderboardResponse};
 use crate::routes::rank::RankResponse;
@@ -31,6 +32,7 @@ use crate::routes::stats::StatsResponse;
         LeaderboardResponse,
         RankResponse,
         StatsResponse,
+        ErrorBody,
     )),
     info(
         title = "realtime-leaderboard API",
@@ -86,6 +88,25 @@ mod tests {
         assert!(
             names.contains(&"offset"),
             "offset not documented: {names:?}"
+        );
+    }
+
+    /// Error responses must describe their body, not just a free-text
+    /// description, so a generated client can type the failure case.
+    #[test]
+    fn error_responses_reference_the_error_body() {
+        let spec = serde_json::to_value(ApiDoc::openapi()).expect("serialize");
+
+        assert!(
+            spec["components"]["schemas"].get("ErrorBody").is_some(),
+            "ErrorBody schema is not registered"
+        );
+
+        let server_error = &spec["paths"]["/leaderboard"]["get"]["responses"]["500"];
+        assert_eq!(
+            server_error["content"]["application/json"]["schema"]["$ref"],
+            "#/components/schemas/ErrorBody",
+            "500 response should carry the ErrorBody schema: {server_error}"
         );
     }
 }

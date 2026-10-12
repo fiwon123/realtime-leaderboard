@@ -4,6 +4,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use serde::Serialize;
+use utoipa::ToSchema;
 
 /// Errors surfaced by route handlers.
 ///
@@ -50,9 +51,16 @@ impl ApiError {
     }
 }
 
-#[derive(Serialize)]
-struct ErrorBody {
-    error: String,
+/// The JSON body carried by every [`ApiError`] response.
+///
+/// Public and [`ToSchema`]-derived so the OpenAPI document can describe error
+/// responses with a real schema (and clients can generate an error type) rather
+/// than a bare description.
+#[derive(Serialize, ToSchema)]
+pub struct ErrorBody {
+    /// Human-readable, client-safe error message.
+    #[schema(example = "bad request: score must be between 0 and 1000000000")]
+    pub error: String,
 }
 
 impl IntoResponse for ApiError {

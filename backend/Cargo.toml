@@ -32,8 +32,11 @@ utoipa = { version = "5.5.0", features = ["uuid"] }
 # Newest Swagger UI that builds on the pinned 1.83 toolchain. Its `rust-embed
 # 8.13` transitive needs `sha2 0.11` (Rust 1.85+), so Cargo.lock holds the
 # rust-embed/-utils/-impl trio at 8.11.0 (`sha2 ^0.10`). Do not let a lockfile
-# update raise those past 8.11.x without re-checking `rust-version = "1.83"`.
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+# update raise those past 8.11.x without re-checking `rust-version = "1.83"`
+# (the CI `msrv` job builds with 1.83.0 to catch exactly that). `vendored`
+# embeds the Swagger UI dist instead of downloading it in the build script, so
+# builds stay hermetic/offline like the committed `.sqlx/` cache.
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "vendored"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
