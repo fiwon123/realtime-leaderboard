@@ -17,6 +17,48 @@
   gap: var(--space-2);
 }
 
+/*
+ * Header/footer nav controls. Ghost pills, deliberately distinct from the
+ * inline `.link-button` text links used inside panels. Class selectors beat the
+ * global `button` element rules below, so these read as secondary controls.
+ */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.nav-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav-pill:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  transform: none;
+}
+
+.nav-pill .nav-icon {
+  display: block;
+  flex: none;
+  opacity: 0.85;
+}
+
 .header-controls {
   display: flex;
   align-items: center;
@@ -121,7 +163,6 @@ main {
       "board rank"
       "board stats"
       "board seeder"
-      "board about"
       "board admin";
   }
 
@@ -139,9 +180,6 @@ main {
   }
   .panel-seeder {
     grid-area: seeder;
-  }
-  .panel-about {
-    grid-area: about;
   }
   .panel-admin {
     grid-area: admin;
@@ -452,10 +490,24 @@ tbody tr:last-child td {
   background: linear-gradient(135deg, #f0c098, #b45309);
 }
 
+/* Rank cell: the number/medal stays centered while the ▲/▼ is pinned to the
+   right edge, so an appearing arrow never shifts the number off-center. */
+.rank-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0 var(--space-3);
+}
+
 /* Rank movement after a refresh moved a player (glyph is decorative; the
    .sr-only text carries the direction). */
 .movement {
-  margin-left: var(--space-1);
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -487,6 +539,31 @@ tbody tr.leader {
 
 tbody tr.leader:hover {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* A row whose value changed on the last load is highlighted; the ▲/▼ above
+   carries the direction when the rank moved too. Declared after `.leader` so a
+   highlighted leader keeps the stronger highlight. */
+tbody tr.changed {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+  animation: row-spotlight 700ms ease-out;
+}
+
+tbody tr.changed:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@keyframes row-spotlight {
+  from {
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tbody tr.changed {
+    animation: none;
+  }
 }
 
 /* Leaderboard empty state. */
@@ -550,32 +627,99 @@ tbody tr.leader:hover {
 
 .footer-links {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   margin-left: auto;
 }
 
-.app-footer a,
-.app-footer .link-button {
+.app-footer a {
   color: var(--accent);
   text-decoration: none;
 }
 
-.app-footer a:hover,
-.app-footer .link-button:hover {
+.app-footer a:hover {
   text-decoration: underline;
   background: none;
 }
 
-/* About panel */
+/* Footer nav controls: the same pills, quieter and smaller. */
+.app-footer .nav-pill {
+  padding: 0.2rem 0.6rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.app-footer .nav-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* About band: full width below the panels, two columns on wide screens. */
+.panel-about {
+  margin-top: var(--space-5);
+}
+
 .about-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4) var(--space-5);
+  margin-top: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .about-content {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.about-column {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-3);
 }
 
 .about-content p {
   margin: 0;
+}
+
+.about-subheading {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.about-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-stack li {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.about-link {
+  font-weight: 600;
 }
 
 /* Leaderboard paging */
@@ -740,11 +884,4 @@ tbody tr.leader:hover {
 
 .tutorial-dismiss {
   margin-left: auto;
-}
-
-/* In the About panel this same button starts a column, so it must not stretch
-   or get pushed to the far right. */
-.about-content .tutorial-dismiss {
-  align-self: flex-start;
-  margin-left: 0;
 }

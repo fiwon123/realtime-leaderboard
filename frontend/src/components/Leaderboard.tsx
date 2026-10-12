@@ -8,8 +8,9 @@ import { LogoMark } from './Logo'
 import { Skeleton } from './Skeleton'
 
 /**
- * A small ▲/▼ shown next to a rank when a refresh moved that player. The glyph
- * is decorative; the screen-reader text carries the actual direction/distance.
+ * A small ▲/▼ pinned to the right edge of the rank cell when a refresh moved
+ * that player (the number stays centered regardless). The glyph is decorative;
+ * the screen-reader text carries the actual direction/distance.
  */
 function RankMovement({ delta }: { delta: number | undefined }) {
   if (delta === undefined || delta === 0) {
@@ -59,14 +60,18 @@ export function Leaderboard({
   const [live, setLive] = useState(false)
   // Per-player rank deltas for the most recent load (positive = moved up).
   const [movements, setMovements] = useState<Record<string, number>>({})
+  // Players whose value (score) changed since the previous load of this page.
+  const [changed, setChanged] = useState<Record<string, boolean>>({})
   const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null)
   // `now` ticks once a second so the freshness stamp ages without a reload.
   const [now, setNow] = useState(() => Date.now())
-  // Snapshot of the previous successful load, keyed by `offset:limit`, so rank
-  // movement is only measured against the same page (paging resets the baseline).
-  const previousRanks = useRef<{
+  // Snapshot of the previous successful load, keyed by `offset:limit`, so both
+  // rank movement and value changes are only measured against the same page
+  // (paging resets the baseline).
+  const previousLoad = useRef<{
     key: string
     ranks: Map<string, number>
+    scores: Map<string, number>
   } | null>(null)
 
   // Controlled by the parent when it passes paging props, otherwise standalone.
@@ -94,27 +99,37 @@ export function Leaderboard({
       try {
         const data = await getLeaderboard(size, from)
         const key = `${from}:${size}`
-        const previous = previousRanks.current
+        const previous = previousLoad.current
         const moved: Record<string, number> = {}
+        const valueChanged: Record<string, boolean> = {}
         // Only compare against the same page; a paged/changed-size load is not
-        // a "movement" and would otherwise show misleading arrows.
+        // a "change" and would otherwise show misleading arrows and highlights.
         if (previous !== null && previous.key === key) {
           for (const entry of data.entries) {
-            const before = previous.ranks.get(entry.player_id)
-            if (before !== undefined && before !== entry.rank) {
-              moved[entry.player_id] = before - entry.rank
+            const beforeScore = previous.scores.get(entry.player_id)
+            // A player new to the page, or one whose score moved, changed value.
+            if (beforeScore === undefined || beforeScore !== entry.score) {
+              valueChanged[entry.player_id] = true
+            }
+            const beforeRank = previous.ranks.get(entry.player_id)
+            if (beforeRank !== undefined && beforeRank !== entry.rank) {
+              moved[entry.player_id] = beforeRank - entry.rank
             }
           }
         }
-        previousRanks.current = {
+        previousLoad.current = {
           key,
           ranks: new Map(
             data.entries.map((entry) => [entry.player_id, entry.rank]),
+          ),
+          scores: new Map(
+            data.entries.map((entry) => [entry.player_id, entry.score]),
           ),
         }
         setEntries(data.entries)
         setTotal(data.total ?? 0)
         setMovements(moved)
+        setChanged(valueChanged)
         setLastLoadedAt(Date.now())
         setNow(Date.now())
         setError(null)
@@ -310,25 +325,35 @@ export function Leaderboard({
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => (
-              <tr
-                key={entry.player_id}
-                className={entry.rank === 1 ? 'leader' : undefined}
-              >
-                <td>
-                  {entry.rank <= 3 ? (
-                    <span className={`medal medal-${entry.rank}`}>
-                      {entry.rank}
+            {entries.map((entry) => {
+              const rowClasses = [
+                entry.rank === 1 ? 'leader' : '',
+                changed[entry.player_id] === true ? 'changed' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')
+              return (
+                <tr
+                  key={entry.player_id}
+                  className={rowClasses === '' ? undefined : rowClasses}
+                >
+                  <td>
+                    <span className="rank-cell">
+                      {entry.rank <= 3 ? (
+                        <span className={`medal medal-${entry.rank}`}>
+                          {entry.rank}
+                        </span>
+                      ) : (
+                        entry.rank
+                      )}
+                      <RankMovement delta={movements[entry.player_id]} />
                     </span>
-                  ) : (
-                    entry.rank
-                  )}
-                  <RankMovement delta={movements[entry.player_id]} />
-                </td>
-                <td>{entry.player_id}</td>
-                <td>{entry.score}</td>
-              </tr>
-            ))}
+                  </td>
+                  <td>{entry.player_id}</td>
+                  <td>{entry.score}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}
