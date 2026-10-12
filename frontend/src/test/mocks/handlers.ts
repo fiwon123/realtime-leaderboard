@@ -17,6 +17,14 @@ export const handlers = [
     return HttpResponse.json({ ...body, duplicate: false }, { status: 201 })
   }),
 
+  http.get('/players', ({ request }) => {
+    const prefix = new URL(request.url).searchParams.get('prefix') ?? ''
+    const players = ['alice', 'al', 'bob'].filter((player) =>
+      player.toLowerCase().startsWith(prefix.toLowerCase()),
+    )
+    return HttpResponse.json({ players })
+  }),
+
   http.get('/players/:playerId/rank', ({ params }) => {
     const playerId = String(params.playerId)
     if (playerId === 'nobody') {

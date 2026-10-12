@@ -1,0 +1,147 @@
+//! Integration tests for `GET /players` (player-id prefix search).
+//!
+//! The board is shared with real data and other test binaries, so these
+//! assertions only consider the uniquely-named players this test created.
+//! Skipped when Postgres/Redis are unreachable.
+
+mod common;
+
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::Router;
+use serde_json::{json, Value};
+use tower::ServiceExt;
+use uuid::Uuid;
+
+async fn get(app: &Router, uri: &str) -> (StatusCode, Value) {
+    let response = app
+        .clone()
+        .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+
+    let status = response.status();
+    let bytes = axum::body::to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .unwrap();
+    let value = if bytes.is_empty() {
+        Value::Null
+    } else {
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null)
+    };
+    (status, value)
+}
+
+async fn post(app: &Router, player: &str, score: i64) {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/scores")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    json!({ "event_id": Uuid::new_v4(), "player_id": player, "score": score })
+                        .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
+/// Remove a test player from Postgres directly, avoiding a dependency on the
+/// admin endpoint (delete/clear) which lives in a later change.
+async fn cleanup(state: &realtime_leaderboard::AppState, player: &str) {
+    let _ = sqlx::query("DELETE FROM score_events WHERE player_id = $1")
+        .bind(player)
+        .execute(&state.db)
+        .await;
+    let _ = sqlx::query("DELETE FROM player_scores WHERE player_id = $1")
+        .bind(player)
+        .execute(&state.db)
+        .await;
+}
+
+#[tokio::test]
+async fn prefix_search_returns_matching_players_highest_score_first() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let app = realtime_leaderboard::app(state.clone());
+
+    // A unique prefix so real data cannot collide with these players.
+    let prefix = format!("it-search-{}", Uuid::new_v4());
+    let low = format!("{prefix}-low");
+    let high = format!("{prefix}-high");
+    let other = format!("{prefix}-other"); // shares the prefix but lower score
+    post(&app, &low, 10).await;
+    post(&app, &high, 90).await;
+    post(&app, &other, 50).await;
+
+    let (status, body) = get(&app, &format!("/players?prefix={prefix}&limit=10")).await;
+    assert_eq!(status, StatusCode::OK);
+
+    let players: Vec<&str> = body["players"]
+        .as_array()
+        .expect("players array")
+        .iter()
+        .map(|v| v.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        players,
+        vec![high.as_str(), other.as_str(), low.as_str()],
+        "matches ordered by score descending"
+    );
+
+    for player in [&low, &high, &other] {
+        cleanup(&state, player).await;
+    }
+}
+
+#[tokio::test]
+async fn prefix_search_does_not_treat_wildcards_as_metacharacters() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let app = realtime_leaderboard::app(state.clone());
+
+    let prefix = format!("it-wild-{}", Uuid::new_v4());
+    let literal = format!("{prefix}%literal");
+    post(&app, &literal, 42).await;
+
+    // A bare `%` must NOT match everything; it matches the literal `%`.
+    let (status, body) = get(&app, "/players?prefix=%25&limit=25").await;
+    assert_eq!(status, StatusCode::OK);
+    let players = body["players"].as_array().expect("players array");
+    assert!(
+        players.iter().all(|p| p.as_str().unwrap().contains('%')),
+        "a literal % must not match ids without one"
+    );
+
+    cleanup(&state, &literal).await;
+}
+
+#[tokio::test]
+async fn prefix_search_rejects_bad_params() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let app = realtime_leaderboard::app(state);
+
+    for uri in [
+        "/players",                       // missing prefix
+        "/players?prefix=",               // empty prefix
+        "/players?prefix=%20%20",         // whitespace-only prefix
+        "/players?prefix=alice&limit=0",  // limit below range
+        "/players?prefix=alice&limit=26", // limit above range
+    ] {
+        let (status, body) = get(&app, uri).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "uri {uri}");
+        assert!(body["error"].is_string(), "expected a JSON error body");
+    }
+}

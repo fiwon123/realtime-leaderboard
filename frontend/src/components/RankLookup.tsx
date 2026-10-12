@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { ApiError, getRank } from '../api/client'
 import type { RankResponse } from '../api/types'
+import { PlayerInput } from './PlayerInput'
 
 interface RankLookupProps {
   /** Page the leaderboard to the rank that was just looked up. */
@@ -60,12 +61,11 @@ export function RankLookup({ onJumpToRank }: RankLookupProps) {
       <h2 id="rank-lookup-heading">Player rank</h2>
       <form onSubmit={handleSubmit}>
         <label htmlFor="rank-player">Player</label>
-        <input
+        <PlayerInput
           id="rank-player"
           name="player_id"
           value={playerId}
-          onChange={(event) => setPlayerId(event.target.value)}
-          autoComplete="off"
+          onChange={setPlayerId}
         />
         <button type="submit" disabled={busy}>
           {busy ? 'Looking up…' : 'Look up rank'}

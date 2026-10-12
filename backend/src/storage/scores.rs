@@ -110,3 +110,52 @@ pub async fn all_player_bests(pool: &PgPool) -> sqlx::Result<Vec<PlayerBest>> {
     .fetch_all(pool)
     .await
 }
+
+/// Escape the `LIKE`/`ILIKE` metacharacters in a user-supplied prefix so a
+/// literal `%` or `_` cannot widen the search.
+fn escape_like(input: &str) -> String {
+    let mut escaped = String::with_capacity(input.len());
+    for ch in input.chars() {
+        if matches!(ch, '\\' | '%' | '_') {
+            escaped.push('\\');
+        }
+        escaped.push(ch);
+    }
+    escaped
+}
+
+/// Case-insensitive prefix search over materialized standings, highest score
+/// first, capped at `limit`. Used to offer player suggestions while typing.
+///
+/// Uses the runtime query API rather than the `query_scalar!` macro: the search
+/// term is built at runtime (escaped) and the compile-time macro would add a
+/// cache entry for a query that is inherently dynamic. The SQL is fixed.
+pub async fn search_players(pool: &PgPool, prefix: &str, limit: i64) -> sqlx::Result<Vec<String>> {
+    let pattern = format!("{}%", escape_like(prefix));
+    sqlx::query_scalar::<_, String>(
+        r#"
+        SELECT player_id
+        FROM player_scores
+        WHERE player_id ILIKE $1 ESCAPE '\'
+        ORDER BY best_score DESC, best_seq ASC, player_id
+        LIMIT $2
+        "#,
+    )
+    .bind(pattern)
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::escape_like;
+
+    #[test]
+    fn escape_like_neutralises_metacharacters() {
+        assert_eq!(escape_like("alice"), "alice");
+        assert_eq!(escape_like("a%"), "a\\%");
+        assert_eq!(escape_like("a_b"), "a\\_b");
+        assert_eq!(escape_like("a\\b"), "a\\\\b");
+    }
+}

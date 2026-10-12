@@ -117,6 +117,72 @@
         }
       }
     },
+    "/players": {
+      "get": {
+        "tags": [
+          "leaderboard"
+        ],
+        "summary": "`GET /players?prefix=&limit=` — prefix-search known players.",
+        "operationId": "search_players",
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "description": "Case-insensitive player-id prefix, 1..=128 bytes",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Max suggestions; defaults to 8, must be 1..=25",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 25,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching player ids, highest score first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Blank/overlong prefix, or limit outside 1..=25",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/players/{player_id}/rank": {
       "get": {
         "tags": [
@@ -374,6 +440,21 @@
             "format": "int64",
             "description": "Total number of players with a standing on the board (independent of the\nrequested page), so a client can render paging controls.",
             "minimum": 0
+          }
+        }
+      },
+      "PlayersResponse": {
+        "type": "object",
+        "required": [
+          "players"
+        ],
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Matching player ids, highest score first."
           }
         }
       },

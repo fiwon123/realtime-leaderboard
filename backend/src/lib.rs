@@ -30,6 +30,7 @@ pub fn app(state: AppState) -> Router {
         ))
         .route("/healthz", get(routes::health::healthz))
         .route("/scores", post(routes::scores::submit_score))
+        .route("/players", get(routes::players::search_players))
         .route("/players/{player_id}/rank", get(routes::rank::get_rank))
         .route("/leaderboard", get(routes::leaderboard::get_leaderboard))
         .route("/stats", get(routes::stats::get_stats))
