@@ -5,14 +5,15 @@ interface LogoMarkProps {
 }
 
 /**
- * The brand mark: three ascending rank bars with a gold realtime bolt.
+ * The brand mark: a gradient trophy cup with a gold spark.
  *
  * Rendered inline (not an `<img>`) so it scales crisply and can pick up layout
  * styles. `useId` keeps the gradient id unique when the mark appears more than
- * once on a page (header and footer).
+ * once on a page (header and footer). `TrophyMark` is exported for the
+ * leaderboard empty state, which reuses the same silhouette.
  */
 export function LogoMark({ className }: LogoMarkProps) {
-  const gradientId = `logo-bars-${useId().replace(/:/g, '')}`
+  const gradientId = `logo-trophy-${useId().replace(/:/g, '')}`
 
   return (
     <svg
@@ -37,11 +38,28 @@ export function LogoMark({ className }: LogoMarkProps) {
         </linearGradient>
       </defs>
       <g fill={`url(#${gradientId})`}>
-        <rect x="3" y="21" width="5" height="9" rx="2.5" />
-        <rect x="11" y="16" width="5" height="14" rx="2.5" />
-        <rect x="19" y="11" width="5" height="19" rx="2.5" />
+        {/* cup */}
+        <path d="M9 6 H23 V12 Q23 18 16 18 Q9 18 9 12 Z" />
+        {/* stem */}
+        <rect x="14.5" y="17" width="3" height="5" />
+        {/* base */}
+        <rect x="9.5" y="22" width="13" height="3" rx="1.5" />
       </g>
-      <path d="M23 1 L14 12 H18.5 L16.5 20 L26 9 H21.5 L23 1 Z" fill="#f59e0b" />
+      <g
+        fill="none"
+        stroke={`url(#${gradientId})`}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      >
+        {/* handles */}
+        <path d="M9 8.5 C5 8.5 5 14 9 14" />
+        <path d="M23 8.5 C27 8.5 27 14 23 14" />
+      </g>
+      {/* gold spark */}
+      <path
+        d="M16 8.5 L17.03 10.97 L19.5 12 L17.03 13.03 L16 15.5 L14.97 13.03 L12.5 12 L14.97 10.97 Z"
+        fill="#f59e0b"
+      />
     </svg>
   )
 }

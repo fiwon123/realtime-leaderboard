@@ -16,6 +16,11 @@ describe('Logo', () => {
     expect(svg).toHaveAttribute('aria-hidden', 'true')
   })
 
+  it('includes the gold spark accent', () => {
+    const { container } = render(<LogoMark />)
+    expect(container.querySelector('path[fill="#f59e0b"]')).not.toBeNull()
+  })
+
   it('gives each mark a unique gradient id', () => {
     const { container } = render(
       <>
