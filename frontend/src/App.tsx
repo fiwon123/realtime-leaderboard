@@ -8,12 +8,35 @@ import { ScoreForm } from './components/ScoreForm'
 import { StatsPanel } from './components/StatsPanel'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Tutorial } from './components/Tutorial'
+import { getHealth } from './api/client'
+import type { HealthResponse } from './api/types'
 import { offsetForRank, pagingUrl, parsePaging } from './lib/paging'
 import type { PageSize, Paging } from './lib/paging'
 import './App.css'
 
+function HealthBadge({ health }: { health: HealthResponse | null }) {
+  const ok = health?.status === 'ok'
+  const label = health === null ? 'Checking…' : ok ? 'Healthy' : 'Degraded'
+
+  return (
+    <span
+      className={ok ? 'badge ok' : 'badge bad'}
+      role="status"
+      title={
+        health === null
+          ? 'Checking the API health'
+          : `postgres=${health.postgres} redis=${health.redis}`
+      }
+    >
+      <span className="badge-dot" aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const [health, setHealth] = useState<HealthResponse | null>(null)
   // Leaderboard paging lives here so the URL can reflect it and RankLookup can
   // drive it. It is seeded from (and kept in) the query string.
   const [paging, setPaging] = useState<Paging>(() =>
@@ -35,6 +58,28 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
+  // Health is independent and cheap; show it in the header for at-a-glance status.
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const data = await getHealth()
+        if (!cancelled) {
+          setHealth(data)
+        }
+      } catch {
+        if (!cancelled) {
+          setHealth({ status: 'degraded', postgres: false, redis: false })
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   function goToOffset(offset: number) {
     commitPaging({ ...paging, offset: Math.max(0, offset) })
   }
@@ -54,6 +99,7 @@ export default function App() {
           <Logo />
         </h1>
         <div className="header-controls">
+          <HealthBadge health={health} />
           <AccentPicker />
           <ThemeToggle />
         </div>
