@@ -89,13 +89,13 @@ describe('Leaderboard', () => {
     render(<Leaderboard autoRefreshMs={20} />)
     await waitFor(() => expect(calls).toBeGreaterThanOrEqual(1))
 
-    await user.click(screen.getByRole('button', { name: /live: off/i }))
+    await user.click(screen.getByRole('button', { name: /auto-refresh: off/i }))
     await waitFor(() => expect(calls).toBeGreaterThanOrEqual(2), {
       timeout: 2000,
     })
 
     // Turning live off stops the polling.
-    await user.click(screen.getByRole('button', { name: /live: on/i }))
+    await user.click(screen.getByRole('button', { name: /auto-refresh: on/i }))
     const settled = calls
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(calls).toBe(settled)

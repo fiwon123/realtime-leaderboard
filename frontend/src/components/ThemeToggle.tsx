@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react'
 
-type Theme = 'system' | 'light' | 'dark'
-
 function prefersDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-color-scheme: dark)').matches
     : false
 }
 
-function resolve(theme: Theme): 'light' | 'dark' {
-  return theme === 'system' ? (prefersDark() ? 'dark' : 'light') : theme
-}
-
-function storedTheme(): Theme {
+function storedTheme(): 'light' | 'dark' {
   try {
     const saved = localStorage.getItem('theme')
     if (saved === 'light' || saved === 'dark') {
@@ -21,14 +15,14 @@ function storedTheme(): Theme {
   } catch {
     // localStorage unavailable; fall back to the system preference.
   }
-  return 'system'
+  return prefersDark() ? 'dark' : 'light'
 }
 
 /**
- * Inline mode icon: monitor (system), sun (light), moon (dark). Decorative —
+ * Inline mode icon: sun (light), moon (dark). Decorative —
  * the button carries the accessible name.
  */
-function ThemeIcon({ theme }: { theme: Theme }) {
+function ThemeIcon({ theme }: { theme: 'light' | 'dark' }) {
   const common = {
     className: 'theme-icon',
     viewBox: '0 0 24 24',
@@ -75,25 +69,19 @@ function ThemeIcon({ theme }: { theme: Theme }) {
  * choice. "system" clears the stored override.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(storedTheme)
+  const [theme, setTheme] = useState<'light' | 'dark'>(storedTheme)
 
   useEffect(() => {
-    document.documentElement.dataset.theme = resolve(theme)
+    document.documentElement.dataset.theme = theme
     try {
-      if (theme === 'system') {
-        localStorage.removeItem('theme')
-      } else {
-        localStorage.setItem('theme', theme)
-      }
+      localStorage.setItem('theme', theme)
     } catch {
       // No persistence available; the in-memory theme still applies.
     }
   }, [theme])
 
   function cycle() {
-    setTheme((current) =>
-      current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system',
-    )
+    setTheme((current) => (current === 'light' ? 'dark' : 'light'))
   }
 
   return (
@@ -104,7 +92,6 @@ export function ThemeToggle() {
       aria-label={`Theme: ${theme}. Click to change.`}
     >
       <ThemeIcon theme={theme} />
-      <span>{theme}</span>
     </button>
   )
 }

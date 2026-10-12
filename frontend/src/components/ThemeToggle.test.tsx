@@ -4,34 +4,35 @@ import { describe, expect, it } from 'vitest'
 import { ThemeToggle } from './ThemeToggle'
 
 describe('ThemeToggle', () => {
-  it('cycles system → light → dark and applies data-theme', async () => {
+  it('cycles light → dark and applies data-theme', async () => {
     const user = userEvent.setup()
     render(<ThemeToggle />)
 
     const button = screen.getByRole('button', { name: /theme:/i })
-    expect(button).toHaveTextContent('system')
-
-    await user.click(button)
-    expect(button).toHaveTextContent('light')
-    expect(document.documentElement.dataset.theme).toBe('light')
-    expect(localStorage.getItem('theme')).toBe('light')
-
-    await user.click(button)
-    expect(button).toHaveTextContent('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
-
-    await user.click(button)
-    expect(button).toHaveTextContent('system')
-    expect(localStorage.getItem('theme')).toBeNull()
+    const initial = button.getAttribute('aria-label')
+    if (initial?.includes('light')) {
+      await user.click(button)
+      expect(button).toHaveAccessibleName(/theme: dark/i)
+      expect(document.documentElement.dataset.theme).toBe('dark')
+      expect(localStorage.getItem('theme')).toBe('dark')
+      await user.click(button)
+      expect(button).toHaveAccessibleName(/theme: light/i)
+      expect(document.documentElement.dataset.theme).toBe('light')
+    } else {
+      await user.click(button)
+      expect(button).toHaveAccessibleName(/theme: light/i)
+      expect(document.documentElement.dataset.theme).toBe('light')
+      expect(localStorage.getItem('theme')).toBe('light')
+      await user.click(button)
+      expect(button).toHaveAccessibleName(/theme: dark/i)
+    }
   })
 
   it('starts from a persisted choice', () => {
     localStorage.setItem('theme', 'dark')
     render(<ThemeToggle />)
 
-    expect(
-      screen.getByRole('button', { name: /theme:/i }),
-    ).toHaveTextContent('dark')
+    expect(screen.getByRole('button', { name: /theme: dark/i })).toBeInTheDocument()
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 

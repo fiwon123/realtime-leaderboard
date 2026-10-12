@@ -145,8 +145,43 @@ export function Leaderboard({
             className="toggle"
             aria-pressed={live}
             onClick={() => setLive((on) => !on)}
+            title={live ? 'Auto-refresh: on' : 'Auto-refresh: off'}
+            aria-label={live ? 'Auto-refresh: on' : 'Auto-refresh: off'}
           >
-            {live ? 'Live: on' : 'Live: off'}
+            {live ? (
+              <svg
+                className="theme-icon"
+                viewBox="0 0 24 24"
+                width={18}
+                height={18}
+                aria-hidden="true"
+                focusable="false"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 8a8 8 0 0 1 16 0" strokeLinecap="round" />
+                <path d="M4 8v4h4M20 16a8 8 0 0 1-16 0" strokeLinecap="round" />
+                <path d="M20 16v-4h-4" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg
+                className="theme-icon"
+                viewBox="0 0 24 24"
+                width={18}
+                height={18}
+                aria-hidden="true"
+                focusable="false"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 8a8 8 0 0 1 16 0" strokeLinecap="round" />
+                <path d="M4 8v4h4M20 16a8 8 0 0 1-16 0" strokeLinecap="round" />
+                <path d="M20 16v-4h-4" strokeLinecap="round" />
+                <path d="M2 2l20 20" strokeLinecap="round" />
+              </svg>
+            )}
           </button>
           <button type="button" onClick={refresh} disabled={loading}>
             Refresh
