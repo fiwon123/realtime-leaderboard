@@ -1,7 +1,9 @@
 //! Integration tests for the ranking-rebuild path.
 //!
 //! Skipped when Postgres/Redis are unreachable. Random player ids keep the
-//! tests independent; each test removes what it wrote.
+//! tests independent of each other, but the `player_scores` table is shared
+//! with real data and other tests, so assertions are relative to whatever it
+//! already holds rather than to a fixed count. Each test removes what it wrote.
 
 mod common;
 
@@ -82,15 +84,33 @@ async fn rebuild_restores_the_leaderboard_from_postgres() {
         .await
         .unwrap();
 
+    // `rebuild` projects every `player_scores` row, so the board — and the
+    // returned count — also include whatever real data is already there.
+    // Compare against the table's actual size, never a hard-coded 2.
+    let expected = scores::all_player_bests(&state.db).await.unwrap().len();
     let count = rebuild(&state).await.unwrap();
-    assert_eq!(count, 2, "both standings must be written");
+    assert_eq!(
+        count, expected,
+        "every Postgres standing must be written, and nothing else"
+    );
 
     let card: i64 = redis::cmd("ZCARD")
         .arg(LEADERBOARD_KEY)
         .query_async(&mut conn)
         .await
         .unwrap();
-    assert_eq!(card, 2, "the ghost member must be removed");
+    assert_eq!(
+        card as usize, expected,
+        "the board must match Postgres exactly, so the ghost is removed"
+    );
+
+    let ghost: Option<f64> = redis::cmd("ZSCORE")
+        .arg(LEADERBOARD_KEY)
+        .arg("ghost-player")
+        .query_async(&mut conn)
+        .await
+        .unwrap();
+    assert!(ghost.is_none(), "the ghost member must be removed");
 
     let raw_a: Option<f64> = redis::cmd("ZSCORE")
         .arg(LEADERBOARD_KEY)
