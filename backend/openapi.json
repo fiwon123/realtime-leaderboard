@@ -122,13 +122,13 @@
         "tags": [
           "leaderboard"
         ],
-        "summary": "`GET /players?prefix=&limit=` — prefix-search known players.",
+        "summary": "`GET /players?prefix=&limit=` — substring-search known players.",
         "operationId": "search_players",
         "parameters": [
           {
             "name": "prefix",
             "in": "query",
-            "description": "Case-insensitive player-id prefix, 1..=128 bytes",
+            "description": "Case-insensitive player-id substring (matched anywhere), 1..=128 bytes; exact and prefix matches rank first",
             "required": true,
             "schema": {
               "type": "string",
@@ -139,7 +139,7 @@
           {
             "name": "limit",
             "in": "query",
-            "description": "Max suggestions; defaults to 8, must be 1..=25",
+            "description": "Max suggestions; defaults to 5, must be 1..=25",
             "required": false,
             "schema": {
               "type": "integer",
@@ -151,7 +151,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Matching player ids, highest score first",
+            "description": "Matching player ids, closest match first",
             "content": {
               "application/json": {
                 "schema": {
@@ -563,7 +563,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Matching player ids, highest score first."
+            "description": "Matching player ids, closest match first."
           }
         }
       },

@@ -103,37 +103,42 @@ export function AdminPanel({ onChanged }: AdminPanelProps) {
         The token stays in this browser tab.
       </p>
 
-      <label htmlFor="admin-token">Admin token</label>
-      <input
-        id="admin-token"
-        name="admin_token"
-        type="password"
-        autoComplete="off"
-        value={token}
-        onChange={(event) => updateToken(event.target.value)}
-      />
+      {/* A form (as in the other panels) gives the fields a consistent
+          column/gap rhythm; the buttons are `type="button"`, so this never
+          submits, and Enter must not reload the page. */}
+      <form onSubmit={(event) => event.preventDefault()}>
+        <label htmlFor="admin-token">Admin token</label>
+        <input
+          id="admin-token"
+          name="admin_token"
+          type="password"
+          autoComplete="off"
+          value={token}
+          onChange={(event) => updateToken(event.target.value)}
+        />
 
-      <label htmlFor="admin-player">Delete player</label>
-      <PlayerInput
-        id="admin-player"
-        name="delete_player_id"
-        value={playerId}
-        onChange={setPlayerId}
-      />
+        <label htmlFor="admin-player">Delete player</label>
+        <PlayerInput
+          id="admin-player"
+          name="delete_player_id"
+          value={playerId}
+          onChange={setPlayerId}
+        />
 
-      <div className="admin-actions">
-        <button type="button" onClick={handleDeletePlayer} disabled={busy}>
-          {busy ? 'Working…' : 'Delete player'}
-        </button>
-        <button
-          type="button"
-          className={confirmingClear ? 'danger' : undefined}
-          onClick={handleClear}
-          disabled={busy}
-        >
-          {confirmingClear ? 'Confirm clear all' : 'Clear all players'}
-        </button>
-      </div>
+        <div className="admin-actions">
+          <button type="button" onClick={handleDeletePlayer} disabled={busy}>
+            {busy ? 'Working…' : 'Delete player'}
+          </button>
+          <button
+            type="button"
+            className={confirmingClear ? 'danger' : undefined}
+            onClick={handleClear}
+            disabled={busy}
+          >
+            {confirmingClear ? 'Confirm clear all' : 'Clear all players'}
+          </button>
+        </div>
+      </form>
 
       {confirmingClear && (
         <p className="muted" role="status">

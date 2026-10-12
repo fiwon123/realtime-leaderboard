@@ -170,4 +170,25 @@ describe('App', () => {
       await screen.findByRole('heading', { name: /how it works/i }),
     ).toBeInTheDocument()
   })
+
+  it('reveals About from the About link', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    // Open by default so the blurb is discoverable.
+    expect(
+      screen.getByText(/real-time leaderboard service/i),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /hide/i }))
+    expect(
+      screen.queryByText(/real-time leaderboard service/i),
+    ).not.toBeInTheDocument()
+
+    // Two "About" links exist (header + footer); either re-reveals it.
+    await user.click(screen.getAllByRole('button', { name: /^about$/i })[0])
+    expect(
+      screen.getByText(/real-time leaderboard service/i),
+    ).toBeInTheDocument()
+  })
 })

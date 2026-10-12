@@ -145,8 +145,8 @@ export function Leaderboard({
             className="toggle"
             aria-pressed={live}
             onClick={() => setLive((on) => !on)}
-            title={live ? 'Auto-refresh: on' : 'Auto-refresh: off'}
-            aria-label={live ? 'Auto-refresh: on' : 'Auto-refresh: off'}
+            title="Auto-refresh the board every 5 seconds"
+            aria-label={live ? 'Live auto-refresh: on' : 'Live auto-refresh: off'}
           >
             {live ? (
               <svg
@@ -182,12 +182,17 @@ export function Leaderboard({
                 <path d="M2 2l20 20" strokeLinecap="round" />
               </svg>
             )}
+            <span className="toggle-label">Live</span>
           </button>
           <button type="button" onClick={refresh} disabled={loading}>
             Refresh
           </button>
         </div>
       </div>
+
+      {live && (
+        <p className="muted live-hint">Auto-refreshing every 5 seconds.</p>
+      )}
 
       {error !== null && (
         <p role="alert" className="error">

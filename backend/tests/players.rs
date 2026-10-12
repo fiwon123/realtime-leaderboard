@@ -1,4 +1,4 @@
-//! Integration tests for `GET /players` (player-id prefix search).
+//! Integration tests for `GET /players` (player-id substring search).
 //!
 //! The board is shared with real data and other test binaries, so these
 //! assertions only consider the uniquely-named players this test created.
@@ -65,23 +65,25 @@ async fn cleanup(state: &realtime_leaderboard::AppState, player: &str) {
 }
 
 #[tokio::test]
-async fn prefix_search_returns_matching_players_highest_score_first() {
+async fn prefix_search_ranks_closest_match_first() {
     let Some(state) = common::try_migrated_state().await else {
         eprintln!("skipping: Postgres/Redis not reachable");
         return;
     };
     let app = realtime_leaderboard::app(state.clone());
 
-    // A unique prefix so real data cannot collide with these players.
-    let prefix = format!("it-search-{}", Uuid::new_v4());
-    let low = format!("{prefix}-low");
-    let high = format!("{prefix}-high");
-    let other = format!("{prefix}-other"); // shares the prefix but lower score
-    post(&app, &low, 10).await;
-    post(&app, &high, 90).await;
-    post(&app, &other, 50).await;
+    // A unique term so real data cannot collide with these players.
+    let term = format!("it-rank-{}", Uuid::new_v4());
+    let exact = term.clone(); // the id itself — closest possible match
+    let short = format!("{term}-a"); // prefix match, short
+    let long = format!("{term}-bbbbbbbb"); // prefix match, longer
+    let contained = format!("zz{term}zz"); // substring only, not a prefix
+    post(&app, &exact, 1).await;
+    post(&app, &short, 2).await;
+    post(&app, &long, 3).await;
+    post(&app, &contained, 4).await;
 
-    let (status, body) = get(&app, &format!("/players?prefix={prefix}&limit=10")).await;
+    let (status, body) = get(&app, &format!("/players?prefix={term}&limit=10")).await;
     assert_eq!(status, StatusCode::OK);
 
     let players: Vec<&str> = body["players"]
@@ -92,11 +94,52 @@ async fn prefix_search_returns_matching_players_highest_score_first() {
         .collect();
     assert_eq!(
         players,
-        vec![high.as_str(), other.as_str(), low.as_str()],
-        "matches ordered by score descending"
+        vec![
+            exact.as_str(),
+            short.as_str(),
+            long.as_str(),
+            contained.as_str()
+        ],
+        "exact match, then prefixes shortest-first, then substrings"
     );
 
-    for player in [&low, &high, &other] {
+    for player in [&exact, &short, &long, &contained] {
+        cleanup(&state, player).await;
+    }
+}
+
+#[tokio::test]
+async fn prefix_search_breaks_ties_by_score() {
+    let Some(state) = common::try_migrated_state().await else {
+        eprintln!("skipping: Postgres/Redis not reachable");
+        return;
+    };
+    let app = realtime_leaderboard::app(state.clone());
+
+    // Same term and equal closeness (both prefix matches, same length), so the
+    // higher score must come first.
+    let term = format!("it-tie-{}", Uuid::new_v4());
+    let low = format!("{term}-aa");
+    let high = format!("{term}-bb");
+    post(&app, &low, 5).await;
+    post(&app, &high, 95).await;
+
+    let (status, body) = get(&app, &format!("/players?prefix={term}&limit=10")).await;
+    assert_eq!(status, StatusCode::OK);
+
+    let players: Vec<&str> = body["players"]
+        .as_array()
+        .expect("players array")
+        .iter()
+        .map(|v| v.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        players,
+        vec![high.as_str(), low.as_str()],
+        "equally close matches break ties by score descending"
+    );
+
+    for player in [&low, &high] {
         cleanup(&state, player).await;
     }
 }
