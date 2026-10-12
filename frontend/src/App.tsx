@@ -125,7 +125,7 @@ export default function App() {
       </main>
       <footer className="app-footer">
         <LogoMark className="footer-mark" />
-        <span className="footer-note">Rust · Postgres · Redis · React</span>
+        <span className="footer-note">Live rankings for every score</span>
         <nav className="footer-links" aria-label="Project links">
           <a href="/swagger-ui/">API docs</a>
           <a
