@@ -11,6 +11,27 @@ const ENTRIES = [
  * paths resolve against the test origin, so they are origin-agnostic. Individual
  * tests override these with `server.use(...)`.
  */
+
+/** Known players the `/players` mock searches, mirroring the API ordering. */
+const SEARCHABLE = ['alice', 'al', 'bob']
+
+/** Exact match, then prefix, then substring — the backend's ranking. */
+function rankPlayers(term: string): string[] {
+  const query = term.toLowerCase()
+  const bucket = (id: string) => {
+    const lower = id.toLowerCase()
+    if (lower === query) return 0
+    return lower.startsWith(query) ? 1 : 2
+  }
+  return SEARCHABLE.filter((id) => id.toLowerCase().includes(query)).sort(
+    (a, b) =>
+      bucket(a) - bucket(b) ||
+      a.toLowerCase().indexOf(query) - b.toLowerCase().indexOf(query) ||
+      a.length - b.length ||
+      a.localeCompare(b),
+  )
+}
+
 export const handlers = [
   http.post('/scores', async ({ request }) => {
     const body = (await request.json()) as ScoreEvent
@@ -18,11 +39,10 @@ export const handlers = [
   }),
 
   http.get('/players', ({ request }) => {
-    const prefix = new URL(request.url).searchParams.get('prefix') ?? ''
-    const players = ['alice', 'al', 'bob'].filter((player) =>
-      player.toLowerCase().startsWith(prefix.toLowerCase()),
-    )
-    return HttpResponse.json({ players })
+    const params = new URL(request.url).searchParams
+    const prefix = (params.get('prefix') ?? '').trim()
+    const limit = Number(params.get('limit') ?? 5)
+    return HttpResponse.json({ players: rankPlayers(prefix).slice(0, limit) })
   }),
 
   http.get('/players/:playerId/rank', ({ params }) => {

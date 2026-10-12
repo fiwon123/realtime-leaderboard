@@ -1,11 +1,27 @@
 import { useState } from 'react'
 
 interface AboutProps {
+  /** Controlled visibility, owned by the parent so a nav link can reveal it. */
+  open?: boolean
+  /** Called when the toggle is used, so a controlled parent can update. */
+  onOpenChange?: (open: boolean) => void
   showTutorialAgain?: () => void
 }
 
-export function About({ showTutorialAgain }: AboutProps) {
-  const [open, setOpen] = useState(false)
+/**
+ * The About panel. Open by default so the project blurb is discoverable; when
+ * `open` is provided the parent controls it (a header/footer link can reveal
+ * and scroll to it).
+ */
+export function About({ open, onOpenChange, showTutorialAgain }: AboutProps) {
+  const [internalOpen, setInternalOpen] = useState(true)
+  const shown = open ?? internalOpen
+
+  function toggle() {
+    const next = !shown
+    setInternalOpen(next)
+    onOpenChange?.(next)
+  }
 
   return (
     <section className="panel panel-about" aria-labelledby="about-heading">
@@ -14,13 +30,13 @@ export function About({ showTutorialAgain }: AboutProps) {
         <button
           type="button"
           className="toggle"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
+          onClick={toggle}
+          aria-expanded={shown}
         >
-          {open ? 'Hide' : 'Learn more'}
+          {shown ? 'Hide' : 'Learn more'}
         </button>
       </div>
-      {open && (
+      {shown && (
         <div className="about-content">
           <p className="muted">
             This is a real-time leaderboard service. Score events are submitted,
@@ -29,7 +45,10 @@ export function About({ showTutorialAgain }: AboutProps) {
           <ol className="tutorial-steps">
             <li>Submit a score event for a player.</li>
             <li>Look up any player&apos;s live rank.</li>
-            <li>Page the top of the board, or turn on Live to watch it update.</li>
+            <li>
+              Page through the top of the board — or switch on{' '}
+              <strong>Live</strong> to auto-refresh it every 5 seconds.
+            </li>
           </ol>
           {showTutorialAgain !== undefined && (
             <button

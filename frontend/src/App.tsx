@@ -46,6 +46,9 @@ export default function App() {
   // Controlled by App so a nav link can reveal the tutorial again; seeded from
   // the persisted dismissal so a reload after "Got it" stays hidden.
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDismissed())
+  // About opens on load so the blurb is discoverable, and a nav link can reveal
+  // it again after the user collapses it.
+  const [aboutOpen, setAboutOpen] = useState(true)
   // Leaderboard paging lives here so the URL can reflect it and RankLookup can
   // drive it. It is seeded from (and kept in) the query string.
   const [paging, setPaging] = useState<Paging>(() =>
@@ -112,6 +115,15 @@ export default function App() {
     }
   }
 
+  // Reveal the About panel from a nav link and scroll it into view.
+  function revealAbout() {
+    setAboutOpen(true)
+    const heading = document.getElementById('about-heading')
+    if (typeof heading?.scrollIntoView === 'function') {
+      heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <>
       <header className="app-header">
@@ -121,6 +133,9 @@ export default function App() {
         <nav className="header-nav" aria-label="Main">
           <button type="button" className="link-button" onClick={revealTutorial}>
             How to
+          </button>
+          <button type="button" className="link-button" onClick={revealAbout}>
+            About
           </button>
         </nav>
         <div className="header-controls">
@@ -148,7 +163,11 @@ export default function App() {
             onLimitChange={changeLimit}
           />
           <StatsPanel />
-          <About showTutorialAgain={revealTutorial} />
+          <About
+            open={aboutOpen}
+            onOpenChange={setAboutOpen}
+            showTutorialAgain={revealTutorial}
+          />
           <DemoSeeder onSeeded={bump} />
           <AdminPanel onChanged={bump} />
         </div>
@@ -159,6 +178,9 @@ export default function App() {
         <nav className="footer-links" aria-label="Project links">
           <button type="button" className="link-button" onClick={revealTutorial}>
             How to
+          </button>
+          <button type="button" className="link-button" onClick={revealAbout}>
+            About
           </button>
           <a href="/swagger-ui/">API docs</a>
           <a

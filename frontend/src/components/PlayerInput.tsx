@@ -25,6 +25,25 @@ interface Result {
 }
 
 /**
+ * Wrap the part of `player` that matches the typed term so the reason for the
+ * suggestion is visible. Falls back to plain text when there is no match.
+ */
+function renderMatch(player: string, term: string) {
+  const at = term === '' ? -1 : player.toLowerCase().indexOf(term.toLowerCase())
+  if (at < 0) {
+    return player
+  }
+  const end = at + term.length
+  return (
+    <>
+      {player.slice(0, at)}
+      <strong>{player.slice(at, end)}</strong>
+      {player.slice(end)}
+    </>
+  )
+}
+
+/**
  * Player-id text input with a debounced suggestion dropdown backed by
  * `GET /players`. Suggestions are best-effort: a failed lookup leaves the input
  * usable and never surfaces an error, since the raw id can still be typed.
@@ -36,7 +55,7 @@ export function PlayerInput({
   onChange,
   onSelect,
   placeholder,
-  limit = 8,
+  limit = 5,
 }: PlayerInputProps) {
   const listId = useId()
   const [result, setResult] = useState<Result | null>(null)
@@ -162,7 +181,7 @@ export function PlayerInput({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(player)}
             >
-              {player}
+              {renderMatch(player, prefix)}
             </li>
           ))}
         </ul>

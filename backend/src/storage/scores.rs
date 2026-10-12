@@ -124,24 +124,43 @@ fn escape_like(input: &str) -> String {
     escaped
 }
 
-/// Case-insensitive prefix search over materialized standings, highest score
-/// first, capped at `limit`. Used to offer player suggestions while typing.
+/// Case-insensitive substring search over materialized standings, ranked by how
+/// close the match is and capped at `limit`: an exact id first, then ids that
+/// start with the term, then ids that merely contain it; within each group the
+/// shortest id wins, then the highest score. Used to offer player suggestions
+/// while typing, where the closest match belongs at the top.
 ///
 /// Uses the runtime query API rather than the `query_scalar!` macro: the search
 /// term is built at runtime (escaped) and the compile-time macro would add a
 /// cache entry for a query that is inherently dynamic. The SQL is fixed.
 pub async fn search_players(pool: &PgPool, prefix: &str, limit: i64) -> sqlx::Result<Vec<String>> {
-    let pattern = format!("{}%", escape_like(prefix));
+    // The substring pattern filters the rows; the lowercased term powers the
+    // exact/prefix ranking and the position of the match.
+    let pattern = format!("%{}%", escape_like(prefix));
+    let lower = prefix.to_lowercase();
+    let prefix_pattern = format!("{}%", escape_like(&lower));
     sqlx::query_scalar::<_, String>(
         r#"
         SELECT player_id
         FROM player_scores
         WHERE player_id ILIKE $1 ESCAPE '\'
-        ORDER BY best_score DESC, best_seq ASC, player_id
-        LIMIT $2
+        ORDER BY
+            CASE
+                WHEN lower(player_id) = $2 THEN 0
+                WHEN lower(player_id) LIKE $3 ESCAPE '\' THEN 1
+                ELSE 2
+            END,
+            position($2 in lower(player_id)),
+            length(player_id),
+            best_score DESC,
+            best_seq ASC,
+            player_id
+        LIMIT $4
         "#,
     )
     .bind(pattern)
+    .bind(lower)
+    .bind(prefix_pattern)
     .bind(limit)
     .fetch_all(pool)
     .await

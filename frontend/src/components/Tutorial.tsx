@@ -38,8 +38,8 @@ export function Tutorial({ visible, onDismissed }: TutorialProps) {
         <li>Submit a score event for a player.</li>
         <li>Look up any player's live rank.</li>
         <li>
-          Page through the top of the board, or turn on <strong>Live</strong> to
-          watch it update.
+          Page through the top of the board — or switch on <strong>Live</strong>{' '}
+          to auto-refresh it every 5 seconds.
         </li>
       </ol>
       <button type="button" className="tutorial-dismiss" onClick={dismiss}>
