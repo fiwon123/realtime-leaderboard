@@ -45,7 +45,12 @@ async fn main() -> ExitCode {
         }
     };
 
-    let state = AppState { db, redis };
+    let state = AppState {
+        db,
+        redis,
+        // Rebuild is a local operator tool and does not use the admin routes.
+        admin_token: None,
+    };
     match rebuild(&state).await {
         Ok(count) => {
             println!("rebuilt leaderboard: {count} standings");

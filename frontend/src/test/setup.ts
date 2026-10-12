@@ -13,6 +13,8 @@ afterEach(() => {
   // Theme/accent/tutorial choices persist in localStorage and on <html>; clear
   // both so one test cannot leak its preference into the next.
   localStorage.clear()
+  // The admin token lives in sessionStorage; clear it too so it cannot leak.
+  sessionStorage.clear()
   delete document.documentElement.dataset.theme
   delete document.documentElement.dataset.accent
   // The leaderboard syncs paging into the query string; reset it so one test

@@ -183,6 +183,73 @@
         }
       }
     },
+    "/players/{player_id}": {
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "`DELETE /players/{player_id}` — remove one player from both stores.",
+        "operationId": "delete_player",
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "description": "Player id to remove",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Player removed (idempotent — unknown ids still return 204)"
+          },
+          "400": {
+            "description": "Blank or overlong player_id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or incorrect bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Delete failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ADMIN_TOKEN is not configured; admin routes are disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/players/{player_id}/rank": {
       "get": {
         "tags": [
@@ -307,6 +374,48 @@
           },
           "500": {
             "description": "Could not store the event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "`DELETE /scores` — clear every event and standing from both stores.",
+        "operationId": "clear_scores",
+        "responses": {
+          "204": {
+            "description": "All events and standings removed"
+          },
+          "401": {
+            "description": "Missing or incorrect bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Clear failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ADMIN_TOKEN is not configured; admin routes are disabled",
             "content": {
               "application/json": {
                 "schema": {
@@ -576,6 +685,10 @@
     {
       "name": "leaderboard",
       "description": "Live ranking reads"
+    },
+    {
+      "name": "admin",
+      "description": "Token-gated destructive operations"
     }
   ]
 }

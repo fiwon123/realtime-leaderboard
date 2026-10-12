@@ -27,6 +27,9 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-realtime_leaderboard}
       - REDIS_URL=redis://redis:6379
+      # Shared secret for the destructive admin routes. Empty (the default)
+      # disables them. Set it in the gitignored root .env, never here.
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
       # Frontend build/dev vars. Vite reads frontend/.env for local runs; these
       # forward values set in the root .env into the container (empty is fine:
       # an empty base URL means same-origin, and an empty proxy target falls

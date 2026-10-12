@@ -18,6 +18,8 @@ pub enum ApiError {
     /// show a client — never an upstream/internal error's `to_string()`.
     #[error("bad request: {0}")]
     BadRequest(String),
+    #[error("unauthorized")]
+    Unauthorized,
     #[error("service unavailable")]
     Unavailable,
     #[error("internal error: {0}")]
@@ -45,6 +47,7 @@ impl ApiError {
         match self {
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
             ApiError::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -91,6 +94,10 @@ mod tests {
         assert_eq!(
             ApiError::BadRequest("x".into()).into_response().status(),
             StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            ApiError::Unauthorized.into_response().status(),
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             ApiError::Unavailable.into_response().status(),

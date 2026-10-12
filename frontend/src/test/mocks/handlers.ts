@@ -42,4 +42,8 @@ export const handlers = [
   http.get('/healthz', () =>
     HttpResponse.json({ status: 'ok', postgres: true, redis: true }),
   ),
+
+  // Admin routes are destructive; tests override these to assert behavior.
+  http.delete('/players/:playerId', () => new HttpResponse(null, { status: 204 })),
+  http.delete('/scores', () => new HttpResponse(null, { status: 204 })),
 ]

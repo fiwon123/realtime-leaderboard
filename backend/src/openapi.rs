@@ -21,7 +21,9 @@ use crate::routes::stats::StatsResponse;
     paths(
         crate::routes::health::healthz,
         crate::routes::scores::submit_score,
+        crate::routes::admin::clear_scores,
         crate::routes::players::search_players,
+        crate::routes::admin::delete_player,
         crate::routes::rank::get_rank,
         crate::routes::leaderboard::get_leaderboard,
         crate::routes::stats::get_stats,
@@ -46,6 +48,7 @@ use crate::routes::stats::StatsResponse;
         (name = "health", description = "Liveness probes"),
         (name = "scores", description = "Score event ingestion"),
         (name = "leaderboard", description = "Live ranking reads"),
+        (name = "admin", description = "Token-gated destructive operations"),
     ),
 )]
 pub struct ApiDoc;
@@ -63,6 +66,7 @@ mod tests {
             "/healthz",
             "/scores",
             "/players",
+            "/players/{player_id}",
             "/players/{player_id}/rank",
             "/leaderboard",
             "/stats",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { About } from './components/About'
 import { AccentPicker } from './components/AccentPicker'
+import { AdminPanel } from './components/AdminPanel'
 import { DemoSeeder } from './components/DemoSeeder'
 import { Leaderboard } from './components/Leaderboard'
 import { Logo, LogoMark } from './components/Logo'
@@ -149,6 +150,7 @@ export default function App() {
           <StatsPanel />
           <About showTutorialAgain={revealTutorial} />
           <DemoSeeder onSeeded={bump} />
+          <AdminPanel onChanged={bump} />
         </div>
       </main>
       <footer className="app-footer">

@@ -147,6 +147,44 @@ pub async fn search_players(pool: &PgPool, prefix: &str, limit: i64) -> sqlx::Re
     .await
 }
 
+/// Delete a player's durable events and materialized standing in one
+/// transaction. Returns the number of `player_scores` rows removed (`0` when
+/// the player was unknown), so a caller can tell "removed" from "was not there".
+///
+/// Uses the runtime query API: these statements need no compile-time type
+/// inference and so add no `.sqlx` cache entry.
+pub async fn delete_player(pool: &PgPool, player_id: &str) -> sqlx::Result<u64> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query("DELETE FROM score_events WHERE player_id = $1")
+        .bind(player_id)
+        .execute(&mut *tx)
+        .await?;
+
+    let removed = sqlx::query("DELETE FROM player_scores WHERE player_id = $1")
+        .bind(player_id)
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
+    Ok(removed.rows_affected())
+}
+
+/// Remove every durable event and standing. `RESTART IDENTITY` resets the
+/// `seq` sequence so a rebuild orders from scratch.
+///
+/// Takes an executor (not the pool) so a test can run it inside a transaction
+/// it rolls back, exercising the statement without destroying the live rows.
+pub async fn clear_all<'e, E>(executor: E) -> sqlx::Result<()>
+where
+    E: PgExecutor<'e>,
+{
+    sqlx::query("TRUNCATE score_events, player_scores RESTART IDENTITY")
+        .execute(executor)
+        .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::escape_like;

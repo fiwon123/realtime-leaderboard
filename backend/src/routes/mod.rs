@@ -1,5 +1,6 @@
 //! HTTP route handlers.
 
+pub mod admin;
 pub mod health;
 pub mod leaderboard;
 pub mod players;
