@@ -2,6 +2,7 @@
 
 pub mod health;
 pub mod leaderboard;
+pub mod players;
 pub mod rank;
 pub mod scores;
 pub mod stats;

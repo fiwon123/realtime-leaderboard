@@ -10,6 +10,7 @@ use utoipa::OpenApi;
 use crate::error::ErrorBody;
 use crate::routes::health::HealthBody;
 use crate::routes::leaderboard::{LeaderboardEntry, LeaderboardResponse};
+use crate::routes::players::PlayersResponse;
 use crate::routes::rank::RankResponse;
 use crate::routes::scores::{ScoreEvent, ScoreEventResponse};
 use crate::routes::stats::StatsResponse;
@@ -20,6 +21,7 @@ use crate::routes::stats::StatsResponse;
     paths(
         crate::routes::health::healthz,
         crate::routes::scores::submit_score,
+        crate::routes::players::search_players,
         crate::routes::rank::get_rank,
         crate::routes::leaderboard::get_leaderboard,
         crate::routes::stats::get_stats,
@@ -30,6 +32,7 @@ use crate::routes::stats::StatsResponse;
         ScoreEventResponse,
         LeaderboardEntry,
         LeaderboardResponse,
+        PlayersResponse,
         RankResponse,
         StatsResponse,
         ErrorBody,
@@ -59,6 +62,7 @@ mod tests {
         for path in [
             "/healthz",
             "/scores",
+            "/players",
             "/players/{player_id}/rank",
             "/leaderboard",
             "/stats",

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { ApiError, getRank, submitScore } from '../api/client'
 import type { ScoreEventResponse } from '../api/types'
 import { newEventId } from '../lib/uuid'
+import { PlayerInput } from './PlayerInput'
 
 interface ScoreFormProps {
   /** Called after a successful submit so the caller can refresh the board. */
@@ -85,12 +86,11 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
       <h2 id="score-form-heading">Submit a score</h2>
       <form onSubmit={handleSubmit}>
         <label htmlFor="score-player">Player</label>
-        <input
+        <PlayerInput
           id="score-player"
           name="player_id"
           value={playerId}
-          onChange={(event) => setPlayerId(event.target.value)}
-          autoComplete="off"
+          onChange={setPlayerId}
         />
 
         <label htmlFor="score-value">Score</label>

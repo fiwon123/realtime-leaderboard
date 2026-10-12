@@ -1,6 +1,7 @@
 import type {
   HealthResponse,
   LeaderboardResponse,
+  PlayersResponse,
   RankResponse,
   ScoreEvent,
   ScoreEventResponse,
@@ -91,6 +92,15 @@ export function getLeaderboard(
     offset: String(offset),
   })
   return request<LeaderboardResponse>(`/leaderboard?${params.toString()}`)
+}
+
+/** `GET /players` — player ids starting with `prefix`, highest score first. */
+export function searchPlayers(
+  prefix: string,
+  limit = 8,
+): Promise<PlayersResponse> {
+  const params = new URLSearchParams({ prefix, limit: String(limit) })
+  return request<PlayersResponse>(`/players?${params.toString()}`)
 }
 
 /** `GET /stats` — board size and peak score. */

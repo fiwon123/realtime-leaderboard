@@ -33,6 +33,11 @@ export interface LeaderboardResponse {
   total: number
 }
 
+/** `GET /players` — player ids matching a prefix, highest score first. */
+export interface PlayersResponse {
+  players: string[]
+}
+
 /** `GET /stats` — board size and peak score. */
 export interface StatsResponse {
   players: number

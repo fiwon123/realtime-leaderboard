@@ -250,6 +250,46 @@ input:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.player-input {
+  position: relative;
+  display: block;
+}
+
+.player-input input {
+  width: 100%;
+}
+
+.player-suggestions {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.player-suggestion {
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-suggestion.active,
+.player-suggestion:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 button {
   cursor: pointer;
   font-weight: 600;
