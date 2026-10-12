@@ -50,10 +50,11 @@ async function errorMessage(response: Response): Promise<string> {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = resolveUrl(path)
-  // Only POSTs carry a body, so only they declare a content type.
-  const headers: Record<string, string> = {}
-  if (init?.body !== undefined) {
-    headers['content-type'] = 'application/json'
+  // Only requests with a body declare a content type; callers may add their own
+  // headers (e.g. an admin bearer token).
+  const headers = new Headers(init?.headers)
+  if (init?.body !== undefined && !headers.has('content-type')) {
+    headers.set('content-type', 'application/json')
   }
 
   let response: Response
@@ -65,6 +66,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     throw new ApiError(response.status, await errorMessage(response))
+  }
+  // Destructive admin routes answer 204 with no body.
+  if (response.status === 204) {
+    return undefined as T
   }
   return (await response.json()) as T
 }
@@ -111,4 +116,23 @@ export function getStats(): Promise<StatsResponse> {
 /** `GET /healthz` — backing-store health. */
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/healthz')
+}
+
+/**
+ * `DELETE /players/{player_id}` — admin only. Removes the player from both
+ * stores. Rejects with `ApiError` (401 wrong token, 503 admin disabled).
+ */
+export function deletePlayer(playerId: string, token: string): Promise<void> {
+  return request<void>(`/players/${encodeURIComponent(playerId)}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  })
+}
+
+/** `DELETE /scores` — admin only. Clears every event and standing. */
+export function clearScores(token: string): Promise<void> {
+  return request<void>('/scores', {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` },
+  })
 }

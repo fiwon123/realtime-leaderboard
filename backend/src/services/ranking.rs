@@ -108,6 +108,25 @@ pub async fn top(
         .await
 }
 
+/// Remove a player's standing from the board (`ZREM`). Returns the number of
+/// members removed (0 when the player had no standing).
+pub async fn remove(conn: &mut ConnectionManager, player_id: &str) -> redis::RedisResult<u64> {
+    redis::cmd("ZREM")
+        .arg(LEADERBOARD_KEY)
+        .arg(player_id)
+        .query_async(conn)
+        .await
+}
+
+/// Drop the whole board (`DEL`). The set is re-created on the next write.
+pub async fn clear(conn: &mut ConnectionManager) -> redis::RedisResult<()> {
+    redis::cmd("DEL")
+        .arg(LEADERBOARD_KEY)
+        .query_async::<i64>(conn)
+        .await?;
+    Ok(())
+}
+
 /// Number of players with a standing on the board (`ZCARD`).
 pub async fn count(conn: &mut ConnectionManager) -> redis::RedisResult<u64> {
     redis::cmd("ZCARD")

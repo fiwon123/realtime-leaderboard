@@ -50,7 +50,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     tracing::info!(%addr, "realtime-leaderboard listening");
-    axum::serve(listener, app(AppState { db, redis }))
+    let state = AppState {
+        db,
+        redis,
+        admin_token: config.admin_token.clone(),
+    };
+    axum::serve(listener, app(state))
         .with_graceful_shutdown(shutdown_signal())
         .await?;
 

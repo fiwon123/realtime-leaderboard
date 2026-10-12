@@ -11,6 +11,10 @@ pub struct Config {
     pub redis_url: String,
     /// HTTP listen port (`PORT`, defaults to 8080).
     pub port: u16,
+    /// Shared secret guarding the admin routes (`ADMIN_TOKEN`). `None` disables
+    /// them, so a deployment that forgets to set the token exposes no admin
+    /// surface rather than an unguarded one.
+    pub admin_token: Option<String>,
 }
 
 /// Reasons configuration could not be built.
@@ -48,10 +52,19 @@ impl Config {
             _ => 8080,
         };
 
+        // A blank token is treated as absent: an empty bearer value must never
+        // authenticate, and "set but empty" is a common config mistake.
+        let admin_token = vars
+            .get("ADMIN_TOKEN")
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+
         Ok(Self {
             database_url,
             redis_url,
             port,
+            admin_token,
         })
     }
 }
@@ -92,6 +105,34 @@ mod tests {
     fn port_defaults_to_8080() {
         let config = Config::from_vars(vars(&[("DATABASE_URL", "x"), ("REDIS_URL", "y")])).unwrap();
         assert_eq!(config.port, 8080);
+    }
+
+    #[test]
+    fn admin_token_defaults_to_disabled() {
+        let config = Config::from_vars(vars(&[("DATABASE_URL", "x"), ("REDIS_URL", "y")])).unwrap();
+        assert_eq!(config.admin_token, None);
+    }
+
+    #[test]
+    fn blank_admin_token_is_disabled() {
+        let config = Config::from_vars(vars(&[
+            ("DATABASE_URL", "x"),
+            ("REDIS_URL", "y"),
+            ("ADMIN_TOKEN", "   "),
+        ]))
+        .unwrap();
+        assert_eq!(config.admin_token, None);
+    }
+
+    #[test]
+    fn admin_token_is_read() {
+        let config = Config::from_vars(vars(&[
+            ("DATABASE_URL", "x"),
+            ("REDIS_URL", "y"),
+            ("ADMIN_TOKEN", "s3cret"),
+        ]))
+        .unwrap();
+        assert_eq!(config.admin_token.as_deref(), Some("s3cret"));
     }
 
     #[test]

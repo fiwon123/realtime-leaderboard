@@ -14,6 +14,12 @@ use realtime_leaderboard::AppState;
 /// Build an [`AppState`] from `DATABASE_URL` / `REDIS_URL`, or `None` if the
 /// variables are unset or the services cannot be reached.
 pub async fn try_state() -> Option<AppState> {
+    try_state_with_token(None).await
+}
+
+/// Like [`try_state`], but with an admin token configured, so admin-route
+/// tests can exercise the authorized path.
+pub async fn try_state_with_token(admin_token: Option<String>) -> Option<AppState> {
     let database_url = std::env::var("DATABASE_URL")
         .ok()
         .filter(|value| !value.is_empty())?;
@@ -25,7 +31,11 @@ pub async fn try_state() -> Option<AppState> {
     let client = redis::Client::open(redis_url).ok()?;
     let redis = redis::aio::ConnectionManager::new(client).await.ok()?;
 
-    Some(AppState { db, redis })
+    Some(AppState {
+        db,
+        redis,
+        admin_token,
+    })
 }
 
 /// Like [`try_state`], but applies migrations first. Returns `None` when the

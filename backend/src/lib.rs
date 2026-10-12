@@ -12,7 +12,7 @@ pub mod services;
 pub mod state;
 pub mod storage;
 
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::Router;
 use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
@@ -29,8 +29,12 @@ pub fn app(state: AppState) -> Router {
             openapi::ApiDoc::openapi(),
         ))
         .route("/healthz", get(routes::health::healthz))
-        .route("/scores", post(routes::scores::submit_score))
+        .route(
+            "/scores",
+            post(routes::scores::submit_score).delete(routes::admin::clear_scores),
+        )
         .route("/players", get(routes::players::search_players))
+        .route("/players/{player_id}", delete(routes::admin::delete_player))
         .route("/players/{player_id}/rank", get(routes::rank::get_rank))
         .route("/leaderboard", get(routes::leaderboard::get_leaderboard))
         .route("/stats", get(routes::stats::get_stats))
