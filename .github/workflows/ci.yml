@@ -135,7 +135,7 @@ jobs:
 
       - name: Set up Node
         # Node LTS; the major matches mise.toml and the Dockerfile.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
