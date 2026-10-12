@@ -145,4 +145,9 @@ describe('App', () => {
     expect(await screen.findByText('zed')).toBeInTheDocument()
     expect(window.location.search).toBe('?offset=10')
   })
+
+  it('shows a healthy badge in the header', async () => {
+    render(<App />)
+    expect(await screen.findByText(/healthy/i)).toBeInTheDocument()
+  })
 })
