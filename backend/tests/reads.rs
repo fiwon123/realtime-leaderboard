@@ -203,6 +203,19 @@ async fn leaderboard_returns_entries_in_descending_score_order() {
     }
     assert!(ranks.windows(2).all(|w| w[0] < w[1]), "ranks must increase");
 
+    // `total` is the whole-board size, independent of the requested page.
+    let mut conn = state.redis.clone();
+    let zcard: u64 = redis::cmd("ZCARD")
+        .arg(LEADERBOARD_KEY)
+        .query_async(&mut conn)
+        .await
+        .unwrap();
+    assert_eq!(
+        body["total"].as_u64().unwrap(),
+        zcard,
+        "total must equal the board size"
+    );
+
     cleanup(
         &state,
         &players

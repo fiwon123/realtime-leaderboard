@@ -35,6 +35,9 @@ pub struct LeaderboardEntry {
 #[derive(Debug, Serialize, PartialEq, Eq, ToSchema)]
 pub struct LeaderboardResponse {
     pub entries: Vec<LeaderboardEntry>,
+    /// Total number of players with a standing on the board (independent of the
+    /// requested page), so a client can render paging controls.
+    pub total: u64,
 }
 
 /// `GET /leaderboard` — page through the top of the board, highest first.
@@ -84,6 +87,10 @@ pub async fn get_leaderboard(
         .await
         .map_err(|_elapsed| ApiError::Unavailable)??;
 
+    let total = timeout(READ_TIMEOUT, ranking::count(&mut conn))
+        .await
+        .map_err(|_elapsed| ApiError::Unavailable)??;
+
     let entries = rows
         .into_iter()
         .enumerate()
@@ -94,5 +101,5 @@ pub async fn get_leaderboard(
         })
         .collect();
 
-    Ok(Json(LeaderboardResponse { entries }))
+    Ok(Json(LeaderboardResponse { entries, total }))
 }

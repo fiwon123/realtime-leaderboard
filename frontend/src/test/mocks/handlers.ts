@@ -25,5 +25,13 @@ export const handlers = [
     return HttpResponse.json({ player_id: playerId, rank: 1, score: 900 })
   }),
 
-  http.get('/leaderboard', () => HttpResponse.json({ entries: ENTRIES })),
+  http.get('/leaderboard', () => HttpResponse.json({ entries: ENTRIES, total: 2 })),
+
+  http.get('/stats', () =>
+    HttpResponse.json({ players: 2, top_score: 900 }),
+  ),
+
+  http.get('/healthz', () =>
+    HttpResponse.json({ status: 'ok', postgres: true, redis: true }),
+  ),
 ]

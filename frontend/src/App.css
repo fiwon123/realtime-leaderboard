@@ -71,6 +71,35 @@ section h2 {
   gap: var(--space-2);
 }
 
+.section-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Secondary buttons (live + theme) sit next to the primary action. */
+.toggle,
+.theme-toggle {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.toggle:hover:not(:disabled),
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
 form {
   display: flex;
   flex-direction: column;
@@ -222,4 +251,83 @@ tbody tr:last-child td {
 
 .app-footer a:hover {
   text-decoration: underline;
+}
+
+/* Leaderboard paging */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.pager-status {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stats panel */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stats dt {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.badge-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.ok {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+.badge.bad {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+/* Tutorial */
+.tutorial {
+  margin-bottom: var(--space-5);
+}
+
+.tutorial-steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+}
+
+.tutorial-steps li + li {
+  margin-top: 0.25rem;
 }

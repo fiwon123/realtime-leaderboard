@@ -16,10 +16,11 @@
       ;(() => {
         try {
           const saved = localStorage.getItem('theme')
+          const choice = saved === 'light' || saved === 'dark' ? saved : null
           const dark =
-            saved === null
+            choice === null
               ? window.matchMedia('(prefers-color-scheme: dark)').matches
-              : saved === 'dark'
+              : choice === 'dark'
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
         } catch {
           // localStorage/matchMedia unavailable: keep the light default.

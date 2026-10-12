@@ -1,12 +1,17 @@
 import { useState } from 'react'
+import { DemoSeeder } from './components/DemoSeeder'
 import { Leaderboard } from './components/Leaderboard'
 import { Logo, LogoMark } from './components/Logo'
 import { RankLookup } from './components/RankLookup'
 import { ScoreForm } from './components/ScoreForm'
+import { StatsPanel } from './components/StatsPanel'
+import { ThemeToggle } from './components/ThemeToggle'
+import { Tutorial } from './components/Tutorial'
 import './App.css'
 
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
+  const bump = () => setRefreshKey((key) => key + 1)
 
   return (
     <>
@@ -14,15 +19,19 @@ export default function App() {
         <h1 className="brand">
           <Logo />
         </h1>
+        <ThemeToggle />
       </header>
       <main>
         <p className="tagline">
           Submit score events and read the live ranking.
         </p>
+        <Tutorial />
         <div className="panels">
-          <ScoreForm onSubmitted={() => setRefreshKey((key) => key + 1)} />
+          <ScoreForm onSubmitted={bump} />
           <RankLookup />
           <Leaderboard refreshKey={refreshKey} />
+          <StatsPanel />
+          <DemoSeeder onSeeded={bump} />
         </div>
       </main>
       <footer className="app-footer">
