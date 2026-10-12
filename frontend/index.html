@@ -10,6 +10,22 @@
     />
     <meta name="theme-color" content="#4f46e5" />
     <title>Realtime Leaderboard</title>
+    <script>
+      // Resolve the theme before first paint so dark mode does not flash light.
+      // The saved choice wins; otherwise follow the OS. (The toggle UI lands later.)
+      ;(() => {
+        try {
+          const saved = localStorage.getItem('theme')
+          const dark =
+            saved === null
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              : saved === 'dark'
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        } catch {
+          // localStorage/matchMedia unavailable: keep the light default.
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

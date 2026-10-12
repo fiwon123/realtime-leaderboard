@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, getLeaderboard } from '../api/client'
 import type { LeaderboardEntry } from '../api/types'
+import { Skeleton } from './Skeleton'
 
 interface LeaderboardProps {
   /** Bump to force a reload (e.g. after a score is submitted). */
@@ -54,6 +55,18 @@ export function Leaderboard({ refreshKey = 0 }: LeaderboardProps) {
       </div>
 
       {error !== null && <p role="alert" className="error">{error}</p>}
+
+      {loading && entries.length === 0 && (
+        <div className="skeleton-list" aria-hidden="true">
+          {[0, 1, 2].map((row) => (
+            <div className="skeleton-row" key={row}>
+              <Skeleton width="2.5rem" />
+              <Skeleton width={row === 1 ? '70%' : '55%'} />
+              <Skeleton width="3.5rem" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && error === null && entries.length === 0 && (
         <p role="status">No scores yet.</p>
