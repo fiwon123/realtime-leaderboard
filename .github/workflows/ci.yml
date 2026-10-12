@@ -26,10 +26,37 @@ permissions:
 jobs:
   rust:
     runs-on: ubuntu-latest
-    # sqlx's compile-time-checked queries read the committed `.sqlx/` cache
-    # instead of a live database, so CI needs no Postgres service.
+    # Postgres and Redis back the integration tests in `tests/`, so `cargo test`
+    # exercises them against a real store instead of printing a skip ("skipped
+    # is not passed"). SQLX_OFFLINE still points the compile-time-checked
+    # queries at the committed `.sqlx/` cache, not the running database.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: leaderboard
+          POSTGRES_PASSWORD: leaderboard
+          POSTGRES_DB: leaderboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leaderboard"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       SQLX_OFFLINE: "true"
+      DATABASE_URL: postgres://leaderboard:leaderboard@localhost:5432/leaderboard
+      REDIS_URL: redis://localhost:6379
     defaults:
       run:
         working-directory: backend
@@ -69,6 +96,34 @@ jobs:
         run: |
           cargo run --locked --bin openapi
           git --no-pager diff --exit-code -- openapi.json
+
+  msrv:
+    runs-on: ubuntu-latest
+    # The utoipa-swagger-ui tree stays on Rust 1.83 only because Cargo.lock
+    # pins the rust-embed trio at 8.11.0. Building with the pinned toolchain
+    # fails fast when an update (Dependabot/`cargo update`) raises it to a
+    # version needing a newer compiler -- a change `stable` would accept,
+    # silently breaking `rust-version = "1.83"`.
+    env:
+      SQLX_OFFLINE: "true"
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned toolchain
+        run: rustup toolchain install 1.83.0 --profile minimal --no-self-update
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'backend'
+
+      - name: Build with the MSRV toolchain
+        # `--all-targets` also compiles the integration tests, so an MSRV break
+        # in test code is caught too.
+        run: cargo +1.83.0 build --locked --all-targets
 
   frontend:
     runs-on: ubuntu-latest
