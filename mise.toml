@@ -1,0 +1,8 @@
+# Toolchain pins (host + dev image). `mise install` on the host; the Dockerfile
+# pins the same major so sandbox and host agree.
+[tools]
+rust = "1.83"
+gh = "2.102.0"
+# Node LTS for the frontend toolchain (Vite/Vitest/Playwright). The Dockerfile
+# pins the same major so the sandbox matches the host.
+node = "22"

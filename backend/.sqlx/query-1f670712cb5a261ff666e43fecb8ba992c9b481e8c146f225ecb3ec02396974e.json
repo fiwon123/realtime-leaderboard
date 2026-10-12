@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT player_id, best_score, best_seq\n        FROM player_scores\n        WHERE player_id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "player_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "best_score",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "best_seq",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1f670712cb5a261ff666e43fecb8ba992c9b481e8c146f225ecb3ec02396974e"
+}

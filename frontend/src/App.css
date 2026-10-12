@@ -1,0 +1,680 @@
+/* Layout + component styles. Tokens and base styling live in styles/theme.css. */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  max-width: 66rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) 0;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.link-button:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+}
+
+.accent-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The swatch colour comes from an inline style (per-accent token), so the
+   generic button/hover backgrounds must not win. */
+.accent-swatch {
+  width: 1.05rem;
+  height: 1.05rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 20%);
+}
+
+.accent-swatch:hover,
+.accent-picker .accent-swatch:active {
+  transform: none;
+}
+
+.accent-swatch[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--text);
+}
+
+.brand {
+  display: flex;
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.logo-mark {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+}
+
+.logo-wordmark {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+main {
+  max-width: 66rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.tagline {
+  margin-top: 0;
+  color: var(--text-muted);
+}
+
+/*
+ * Shell layout: on wide screens the leaderboard owns a dominant (2fr) column
+ * with the other panels stacked in a 1fr side rail; below the breakpoint it
+ * collapses to a single column in DOM order.
+ */
+.panels {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 60rem) {
+  .panels {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas:
+      "board score"
+      "board rank"
+      "board stats"
+      "board seeder"
+      "board about"
+      "board admin";
+  }
+
+  .panel-board {
+    grid-area: board;
+  }
+  .panel-score {
+    grid-area: score;
+  }
+  .panel-rank {
+    grid-area: rank;
+  }
+  .panel-stats {
+    grid-area: stats;
+  }
+  .panel-seeder {
+    grid-area: seeder;
+  }
+  .panel-about {
+    grid-area: about;
+  }
+  .panel-admin {
+    grid-area: admin;
+  }
+}
+
+.panel-admin code {
+  font-size: 0.85em;
+}
+
+.admin-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.admin-actions button {
+  flex: 1 1 auto;
+}
+
+/* The armed "confirm clear" state reads as destructive. */
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: #fff;
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--error);
+  border-color: var(--error);
+  filter: brightness(0.92);
+}
+
+section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+section h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.section-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Secondary buttons (live + theme) sit next to the primary action. */
+.toggle,
+.theme-toggle {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.4rem 0.4rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.theme-toggle {
+  gap: 0;
+}
+
+.theme-icon {
+  display: block;
+  flex: none;
+}
+
+.toggle:hover:not(:disabled),
+.theme-toggle:hover {
+  border-color: var(--accent);
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.toggle[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+input {
+  background: var(--surface);
+  color: var(--text);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+input:hover {
+  border-color: var(--text-muted);
+}
+
+input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.player-input {
+  position: relative;
+  display: block;
+}
+
+.player-input input {
+  width: 100%;
+}
+
+.player-suggestions {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.player-suggestion {
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-suggestion.active,
+.player-suggestion:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    transform var(--transition);
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button:active:not(:disabled) {
+  background: var(--accent-active);
+  border-color: var(--accent-active);
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.error {
+  color: var(--error);
+}
+
+.success {
+  color: var(--success);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Center rank column (header + cells). */
+.panel-board th:first-child,
+.panel-board td:first-child {
+  text-align: center;
+}
+
+th {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tbody tr {
+  transition: background-color var(--transition);
+}
+
+tbody tr:hover {
+  background: var(--surface-2);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Top-3 rank badges and the leader row highlight. */
+.medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: #1f2937;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.medal-1 {
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+
+.medal-2 {
+  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+}
+
+.medal-3 {
+  background: linear-gradient(135deg, #f0c098, #b45309);
+}
+
+tbody tr.leader {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+tbody tr.leader:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* Leaderboard empty state. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  text-align: center;
+}
+
+.empty-mark {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  opacity: 0.9;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-title {
+  font-weight: 600;
+}
+
+/* Loading placeholders for the leaderboard's first fetch. */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 3rem 1fr 4rem;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  max-width: 66rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.footer-mark {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
+.app-footer a,
+.app-footer .link-button {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.app-footer a:hover,
+.app-footer .link-button:hover {
+  text-decoration: underline;
+  background: none;
+}
+
+/* About panel */
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.about-content p {
+  margin: 0;
+}
+
+/* Leaderboard paging */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.pager-status {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Page-size selector in the section header. */
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.page-size select {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Inline, low-emphasis action (e.g. "Show on leaderboard"). */
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.link-button:hover:not(:disabled),
+.link-button:active:not(:disabled) {
+  background: none;
+  color: var(--accent-hover);
+  transform: none;
+}
+
+.rank-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Stats panel */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stats dt {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.badge-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge.ok {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+.badge.bad {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+/* Tutorial: a compact one-row strip rather than a full panel. */
+.tutorial {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+}
+
+.tutorial-title {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.tutorial-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tutorial-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  counter-increment: step;
+}
+
+.tutorial-steps li::before {
+  content: counter(step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tutorial-dismiss {
+  margin-left: auto;
+}

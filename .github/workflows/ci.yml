@@ -1,0 +1,163 @@
+name: CI
+
+# CI for the backend (Rust) and frontend (Node). Standard toolchains only:
+# rustfmt/clippy/test/build, and npm lint/typecheck/test/build -- no third-party
+# linters, so it runs on any project unchanged. Lockfiles are the source of
+# truth: cargo runs pass `--locked` and the frontend uses `npm ci`, so a run
+# fails if the lock is missing or stale instead of quietly resolving a
+# dependency set nobody reviewed.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    # Postgres and Redis back the integration tests in `tests/`, so `cargo test`
+    # exercises them against a real store instead of printing a skip ("skipped
+    # is not passed"). SQLX_OFFLINE still points the compile-time-checked
+    # queries at the committed `.sqlx/` cache, not the running database.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: leaderboard
+          POSTGRES_PASSWORD: leaderboard
+          POSTGRES_DB: leaderboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leaderboard"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SQLX_OFFLINE: "true"
+      DATABASE_URL: postgres://leaderboard:leaderboard@localhost:5432/leaderboard
+      REDIS_URL: redis://localhost:6379
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust
+        # `stable` plus the two components the gate needs. The runner ships
+        # rustup; pin your toolchain in rust-toolchain.toml if you want CI and
+        # local development on the same version, not in two places.
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup default stable
+          rustup component add rustfmt clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'backend'
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Build
+        run: cargo build --locked
+
+      - name: OpenAPI spec is up to date
+        # Regenerate the committed spec and fail if it changed: the checked-in
+        # document must match what the handler annotations produce, so it can
+        # never drift from the code.
+        run: |
+          cargo run --locked --bin openapi
+          git --no-pager diff --exit-code -- openapi.json
+
+  msrv:
+    runs-on: ubuntu-latest
+    # The utoipa-swagger-ui tree stays on Rust 1.83 only because Cargo.lock
+    # pins the rust-embed trio at 8.11.0. Building with the pinned toolchain
+    # fails fast when an update (Dependabot/`cargo update`) raises it to a
+    # version needing a newer compiler -- a change `stable` would accept,
+    # silently breaking `rust-version = "1.83"`.
+    env:
+      SQLX_OFFLINE: "true"
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned toolchain
+        run: rustup toolchain install 1.83.0 --profile minimal --no-self-update
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'backend'
+
+      - name: Build with the MSRV toolchain
+        # `--all-targets` also compiles the integration tests, so an MSRV break
+        # in test code is caught too.
+        run: cargo +1.83.0 build --locked --all-targets
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        # Node LTS; the major matches mise.toml and the Dockerfile.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        # Lockfile-exact install; fails when package-lock.json is stale.
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+# A `paths:` filter that the change does not touch means this workflow does not
+# trigger at all, and a triggered run whose jobs are all gated out reports
+# `skipped`, not `passed`. Skipped is not passed: run `make check` locally
+# before relying on CI.

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A realtime leaderboard: submit score events and read live rankings, backed by Postgres and Redis."
+    />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>Realtime Leaderboard</title>
+    <script>
+      // Resolve theme + accent before first paint so neither flashes the wrong
+      // value. The saved choice wins; otherwise follow the OS / default accent.
+      ;(() => {
+        try {
+          const saved = localStorage.getItem('theme')
+          const choice = saved === 'light' || saved === 'dark' ? saved : null
+          const dark =
+            choice === null
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              : choice === 'dark'
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+
+          const accents = ['indigo', 'amber', 'emerald', 'rose', 'cyan']
+          const accent = localStorage.getItem('accent')
+          if (accent !== null && accents.includes(accent)) {
+            document.documentElement.dataset.accent = accent
+          }
+        } catch {
+          // localStorage/matchMedia unavailable: keep the light default.
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
