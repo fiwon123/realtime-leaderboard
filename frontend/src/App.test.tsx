@@ -150,4 +150,24 @@ describe('App', () => {
     render(<App />)
     expect(await screen.findByText(/healthy/i)).toBeInTheDocument()
   })
+
+  it('re-shows the tutorial from the How to link', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(
+      screen.getByRole('heading', { name: /how it works/i }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /got it/i }))
+    expect(
+      screen.queryByRole('heading', { name: /how it works/i }),
+    ).not.toBeInTheDocument()
+
+    // Two "How to" links exist (header + footer); either re-shows it.
+    await user.click(screen.getAllByRole('button', { name: /how to/i })[0])
+    expect(
+      await screen.findByRole('heading', { name: /how it works/i }),
+    ).toBeInTheDocument()
+  })
 })
