@@ -10,7 +10,7 @@ function initiallyDismissed(): boolean {
   }
 }
 
-/** A dismissible "how it works" panel; the dismissal persists locally. */
+/** A dismissible "how it works" strip; the dismissal persists locally. */
 export function Tutorial() {
   const [dismissed, setDismissed] = useState(initiallyDismissed)
 
@@ -29,12 +29,9 @@ export function Tutorial() {
 
   return (
     <section className="tutorial" aria-labelledby="tutorial-heading">
-      <div className="section-header">
-        <h2 id="tutorial-heading">How it works</h2>
-        <button type="button" onClick={dismiss}>
-          Got it
-        </button>
-      </div>
+      <h2 id="tutorial-heading" className="tutorial-title">
+        How it works
+      </h2>
       <ol className="tutorial-steps">
         <li>Submit a score event for a player.</li>
         <li>Look up any player's live rank.</li>
@@ -43,6 +40,9 @@ export function Tutorial() {
           watch it update.
         </li>
       </ol>
+      <button type="button" className="tutorial-dismiss" onClick={dismiss}>
+        Got it
+      </button>
     </section>
   )
 }

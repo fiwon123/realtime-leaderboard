@@ -64,4 +64,85 @@ describe('App', () => {
     expect(await within(leaderboard).findByText('carol')).toBeInTheDocument()
     expect(calls).toBeGreaterThanOrEqual(2)
   })
+
+  it('restores the leaderboard page from the URL', async () => {
+    let request: URL | null = null
+    server.use(
+      http.get('/leaderboard', ({ request: req }) => {
+        request = new URL(req.url)
+        return HttpResponse.json({
+          entries: [{ rank: 11, player_id: 'zed', score: 5 }],
+          total: 11,
+        })
+      }),
+    )
+    window.history.replaceState({}, '', '/?offset=10&limit=25')
+
+    render(<App />)
+
+    expect(await screen.findByText('zed')).toBeInTheDocument()
+    expect(request!.searchParams.get('offset')).toBe('10')
+    expect(request!.searchParams.get('limit')).toBe('25')
+    expect(screen.getByLabelText('Rows')).toHaveValue('25')
+  })
+
+  it('syncs paging into the URL when the user pages', async () => {
+    server.use(
+      http.get('/leaderboard', ({ request }) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? '0',
+        )
+        const entries =
+          offset === 0
+            ? [{ rank: 1, player_id: 'alice', score: 900 }]
+            : [{ rank: 11, player_id: 'zed', score: 1 }]
+        return HttpResponse.json({ entries, total: 11 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /older/i }))
+    await screen.findByText('zed')
+
+    expect(window.location.search).toBe('?offset=10')
+  })
+
+  it('pages the board to a player looked up by rank', async () => {
+    server.use(
+      http.get('/leaderboard', ({ request }) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? '0',
+        )
+        const entries =
+          offset === 0
+            ? [{ rank: 1, player_id: 'alice', score: 900 }]
+            : [{ rank: 11, player_id: 'zed', score: 1 }]
+        return HttpResponse.json({ entries, total: 11 })
+      }),
+      http.get('/players/:playerId/rank', () =>
+        HttpResponse.json({ player_id: 'zed', rank: 11, score: 1 }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByText('alice')
+
+    const rankPanel = screen.getByRole('region', { name: /player rank/i })
+    await user.type(within(rankPanel).getByLabelText('Player'), 'zed')
+    await user.click(
+      within(rankPanel).getByRole('button', { name: /look up rank/i }),
+    )
+    await within(rankPanel).findByText(/is rank 11/i)
+
+    await user.click(
+      within(rankPanel).getByRole('button', { name: /show on leaderboard/i }),
+    )
+
+    expect(await screen.findByText('zed')).toBeInTheDocument()
+    expect(window.location.search).toBe('?offset=10')
+  })
 })

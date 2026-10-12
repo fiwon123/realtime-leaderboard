@@ -89,6 +89,12 @@ frontend dev server inside the sandbox (`make dev-frontend` does just the latter
 **5173**; it starts before the API finishes compiling, so API calls fail until
 `cargo run` is up.
 
+`make dev-restart` restarts the `dev` container (re-running `cargo run`) **and**
+relaunches Vite. Use it after pulling code that adds a backend route: the
+container runs `cargo run` only once at start and `docker compose up -d` will not
+recreate an unchanged container, so a new route (e.g. `/stats`) 404s until the
+container is restarted.
+
 ### Run All Checks
 
 ```bash

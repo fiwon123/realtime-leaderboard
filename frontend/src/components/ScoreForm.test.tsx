@@ -63,6 +63,37 @@ describe('ScoreForm', () => {
     )
   })
 
+  it('adds the resulting rank after a successful submit', async () => {
+    const user = userEvent.setup()
+    render(<ScoreForm />)
+
+    await user.type(screen.getByLabelText('Player'), 'alice')
+    await user.type(screen.getByLabelText('Score'), '100')
+    await user.click(screen.getByRole('button', { name: /submit score/i }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(/now rank 1/i),
+    )
+  })
+
+  it('still confirms the submit when the rank read fails', async () => {
+    server.use(
+      http.get('/players/:playerId/rank', () =>
+        HttpResponse.json({ error: 'boom' }, { status: 500 }),
+      ),
+    )
+    const user = userEvent.setup()
+    render(<ScoreForm />)
+
+    await user.type(screen.getByLabelText('Player'), 'alice')
+    await user.type(screen.getByLabelText('Score'), '100')
+    await user.click(screen.getByRole('button', { name: /submit score/i }))
+
+    const status = await screen.findByRole('status')
+    expect(status).toHaveTextContent(/stored 100 for alice/i)
+    expect(status).not.toHaveTextContent(/now rank/i)
+  })
+
   it('refuses a blank score without calling the API', async () => {
     const user = userEvent.setup()
     render(<ScoreForm />)

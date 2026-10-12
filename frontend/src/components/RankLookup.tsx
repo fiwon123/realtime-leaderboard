@@ -3,7 +3,12 @@ import type { FormEvent } from 'react'
 import { ApiError, getRank } from '../api/client'
 import type { RankResponse } from '../api/types'
 
-export function RankLookup() {
+interface RankLookupProps {
+  /** Page the leaderboard to the rank that was just looked up. */
+  onJumpToRank?: (rank: number) => void
+}
+
+export function RankLookup({ onJumpToRank }: RankLookupProps) {
   const [playerId, setPlayerId] = useState('')
   const [rank, setRank] = useState<RankResponse | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -38,8 +43,20 @@ export function RankLookup() {
     }
   }
 
+  function showOnBoard() {
+    if (rank === null) {
+      return
+    }
+    onJumpToRank?.(rank.rank)
+    // Best-effort scroll; jsdom does not implement scrollIntoView.
+    const heading = document.getElementById('leaderboard-heading')
+    if (typeof heading?.scrollIntoView === 'function') {
+      heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
-    <section aria-labelledby="rank-lookup-heading">
+    <section className="panel panel-rank" aria-labelledby="rank-lookup-heading">
       <h2 id="rank-lookup-heading">Player rank</h2>
       <form onSubmit={handleSubmit}>
         <label htmlFor="rank-player">Player</label>
@@ -58,9 +75,16 @@ export function RankLookup() {
       {error !== null && <p role="alert" className="error">{error}</p>}
       {notFound && <p role="status">No standing yet for that player.</p>}
       {rank !== null && (
-        <p role="status" className="success">
-          {rank.player_id} is rank {rank.rank} with {rank.score}.
-        </p>
+        <div className="rank-result">
+          <p role="status" className="success">
+            {rank.player_id} is rank {rank.rank} with {rank.score}.
+          </p>
+          {onJumpToRank !== undefined && (
+            <button type="button" className="link-button" onClick={showOnBoard}>
+              Show on leaderboard
+            </button>
+          )}
+        </div>
       )}
     </section>
   )

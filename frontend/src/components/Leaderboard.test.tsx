@@ -1,9 +1,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Leaderboard } from './Leaderboard'
 import { server } from '../test/mocks/server'
+
+const ENTRIES = [
+  { rank: 1, player_id: 'alice', score: 900 },
+  { rank: 2, player_id: 'bob', score: 700 },
+]
 
 describe('Leaderboard', () => {
   it('renders the entries from the API, highest first', async () => {
@@ -94,5 +99,117 @@ describe('Leaderboard', () => {
     const settled = calls
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(calls).toBe(settled)
+  })
+
+  it('shows medals for the top three and highlights the leader', async () => {
+    server.use(
+      http.get('/leaderboard', () =>
+        HttpResponse.json({
+          entries: [
+            { rank: 1, player_id: 'alice', score: 900 },
+            { rank: 2, player_id: 'bob', score: 700 },
+            { rank: 3, player_id: 'carol', score: 500 },
+            { rank: 4, player_id: 'dave', score: 400 },
+          ],
+          total: 4,
+        }),
+      ),
+    )
+
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    expect(container.querySelector('.medal-1')).toHaveTextContent('1')
+    expect(container.querySelector('.medal-2')).toHaveTextContent('2')
+    expect(container.querySelector('.medal-3')).toHaveTextContent('3')
+    // Rank 4 is a plain number, not a medal.
+    expect(container.querySelector('.medal-4')).toBeNull()
+    expect(container.querySelector('tr.leader')).toHaveTextContent('alice')
+  })
+
+  it('shows the trophy mark in the empty state', async () => {
+    server.use(
+      http.get('/leaderboard', () => HttpResponse.json({ entries: [], total: 0 })),
+    )
+
+    render(<Leaderboard />)
+    const status = await screen.findByRole('status')
+
+    expect(status).toHaveTextContent(/no scores yet/i)
+    expect(status.querySelector('svg')).not.toBeNull()
+  })
+
+  it('requests the chosen page size', async () => {
+    let requestedLimit: string | null = null
+    server.use(
+      http.get('/leaderboard', ({ request }) => {
+        requestedLimit = new URL(request.url).searchParams.get('limit')
+        return HttpResponse.json({ entries: ENTRIES, total: 2 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.selectOptions(screen.getByLabelText('Rows'), '25')
+    await waitFor(() => expect(requestedLimit).toBe('25'))
+  })
+
+  it('warns when the response has rows but no total (stale API)', async () => {
+    server.use(
+      http.get('/leaderboard', () =>
+        HttpResponse.json({ entries: ENTRIES }),
+      ),
+    )
+
+    render(<Leaderboard />)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /out of date/i,
+    )
+  })
+
+  it('lets you page back from an out-of-range page', async () => {
+    const onOffsetChange = vi.fn()
+    server.use(
+      http.get('/leaderboard', () =>
+        HttpResponse.json({ entries: [], total: 11 }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    render(
+      <Leaderboard offset={20} limit={10} onOffsetChange={onOffsetChange} />,
+    )
+
+    expect(
+      await screen.findByText(/no players on this page/i),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /newer/i }))
+    expect(onOffsetChange).toHaveBeenCalledWith(10)
+  })
+
+  it('reports paging changes to the parent when controlled', async () => {
+    const onOffsetChange = vi.fn()
+    server.use(
+      http.get('/leaderboard', ({ request }) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? '0',
+        )
+        const entries =
+          offset === 0 ? [{ rank: 1, player_id: 'alice', score: 900 }] : []
+        return HttpResponse.json({ entries, total: 11 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(
+      <Leaderboard offset={0} limit={10} onOffsetChange={onOffsetChange} />,
+    )
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /older/i }))
+    expect(onOffsetChange).toHaveBeenCalledWith(10)
   })
 })

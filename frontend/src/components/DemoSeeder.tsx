@@ -43,7 +43,7 @@ export function DemoSeeder({ onSeeded }: DemoSeederProps) {
   }
 
   return (
-    <section aria-labelledby="demo-heading">
+    <section className="panel panel-seeder" aria-labelledby="demo-heading">
       <h2 id="demo-heading">Demo data</h2>
       <p className="muted">
         Fill the board with a few sample players to try it out.

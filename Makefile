@@ -2,7 +2,7 @@
 
 COMPONENTS := backend frontend
 
-.PHONY: help check clean dev-up dev-down dev-frontend dev-frontend-log dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
+.PHONY: help check clean dev-up dev-down dev-restart dev-frontend dev-frontend-log dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
 
 # Extra flags for the opencode invocation. `make opencode-auto` /
 # `make dev-opencode-auto` set this to --auto, which auto-approves permissions
@@ -72,6 +72,15 @@ dev-frontend-log:
 
 dev-down:
 	@docker compose down
+
+# The `dev` container runs `cargo run` once at start, and Vite is a detached
+# process inside it. `docker compose up -d` will not recreate an unchanged
+# container, so a code change (e.g. a new backend route like /stats) is not
+# picked up until both are restarted. This does exactly that: restart the
+# container (re-runs the entrypoint) and relaunch Vite.
+dev-restart: ## Restart the dev API container and the Vite dev server
+	@docker compose restart dev
+	@$(MAKE) dev-frontend
 
 dev-log:
 	@docker compose logs -f dev
