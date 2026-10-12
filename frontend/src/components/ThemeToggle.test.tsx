@@ -34,4 +34,12 @@ describe('ThemeToggle', () => {
     ).toHaveTextContent('dark')
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
+
+  it('renders a decorative mode icon', () => {
+    const { container } = render(<ThemeToggle />)
+    const icon = container.querySelector('svg.theme-icon')
+
+    expect(icon).not.toBeNull()
+    expect(icon).toHaveAttribute('aria-hidden', 'true')
+  })
 })

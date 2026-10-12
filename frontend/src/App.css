@@ -4,10 +4,46 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--space-4);
   max-width: 60rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) 0;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.accent-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The swatch colour comes from an inline style (per-accent token), so the
+   generic button/hover backgrounds must not win. */
+.accent-swatch {
+  width: 1.05rem;
+  height: 1.05rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 20%);
+}
+
+.accent-swatch:hover,
+.accent-picker .accent-swatch:active {
+  transform: none;
+}
+
+.accent-swatch[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--text);
 }
 
 .brand {
@@ -82,6 +118,17 @@ section h2 {
   background: var(--surface);
   color: var(--text);
   border-color: var(--border);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.theme-icon {
+  display: block;
+  flex: none;
 }
 
 .toggle:hover:not(:disabled),

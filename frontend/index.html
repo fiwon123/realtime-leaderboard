@@ -11,8 +11,8 @@
     <meta name="theme-color" content="#4f46e5" />
     <title>Realtime Leaderboard</title>
     <script>
-      // Resolve the theme before first paint so dark mode does not flash light.
-      // The saved choice wins; otherwise follow the OS. (The toggle UI lands later.)
+      // Resolve theme + accent before first paint so neither flashes the wrong
+      // value. The saved choice wins; otherwise follow the OS / default accent.
       ;(() => {
         try {
           const saved = localStorage.getItem('theme')
@@ -22,6 +22,12 @@
               ? window.matchMedia('(prefers-color-scheme: dark)').matches
               : choice === 'dark'
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+
+          const accents = ['indigo', 'amber', 'emerald', 'rose', 'cyan']
+          const accent = localStorage.getItem('accent')
+          if (accent !== null && accents.includes(accent)) {
+            document.documentElement.dataset.accent = accent
+          }
         } catch {
           // localStorage/matchMedia unavailable: keep the light default.
         }
