@@ -27,6 +27,13 @@
   --error: #c02636;
   --focus-ring: #6366f1;
 
+  /* Swatch dots for the accent picker (light values). */
+  --accent-swatch-indigo: #4f46e5;
+  --accent-swatch-amber: #b45309;
+  --accent-swatch-emerald: #047857;
+  --accent-swatch-rose: #be123c;
+  --accent-swatch-cyan: #0e7490;
+
   /* Elevation */
   --shadow-sm: 0 1px 2px rgb(16 19 30 / 6%), 0 1px 3px rgb(16 19 30 / 8%);
   --shadow-md: 0 6px 18px rgb(16 19 30 / 10%);
@@ -71,8 +78,84 @@
   --error: #f87171;
   --focus-ring: #a5b4fc;
 
+  /* Swatch dots for the accent picker (dark values). */
+  --accent-swatch-indigo: #818cf8;
+  --accent-swatch-amber: #fbbf24;
+  --accent-swatch-emerald: #34d399;
+  --accent-swatch-rose: #fb7185;
+  --accent-swatch-cyan: #22d3ee;
+
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --shadow-md: 0 8px 24px rgb(0 0 0 / 50%);
+}
+
+/*
+ * Accent presets. Each overrides the accent family for both schemes; the
+ * default (indigo) lives in :root above and needs no attribute. Selected via
+ * `data-accent` on <html>; the pre-paint bootstrap in index.html restores it.
+ */
+:root[data-accent="amber"] {
+  --accent: #b45309;
+  --accent-hover: #92400e;
+  --accent-active: #78350f;
+  --accent-contrast: #ffffff;
+  --focus-ring: #d97706;
+}
+
+:root[data-accent="emerald"] {
+  --accent: #047857;
+  --accent-hover: #065f46;
+  --accent-active: #064e3b;
+  --accent-contrast: #ffffff;
+  --focus-ring: #059669;
+}
+
+:root[data-accent="rose"] {
+  --accent: #be123c;
+  --accent-hover: #9f1239;
+  --accent-active: #881337;
+  --accent-contrast: #ffffff;
+  --focus-ring: #e11d48;
+}
+
+:root[data-accent="cyan"] {
+  --accent: #0e7490;
+  --accent-hover: #155e75;
+  --accent-active: #164e63;
+  --accent-contrast: #ffffff;
+  --focus-ring: #0891b2;
+}
+
+:root[data-theme="dark"][data-accent="amber"] {
+  --accent: #fbbf24;
+  --accent-hover: #fcd34d;
+  --accent-active: #fde68a;
+  --accent-contrast: #0c0f16;
+  --focus-ring: #fbbf24;
+}
+
+:root[data-theme="dark"][data-accent="emerald"] {
+  --accent: #34d399;
+  --accent-hover: #6ee7b7;
+  --accent-active: #a7f3d0;
+  --accent-contrast: #0c0f16;
+  --focus-ring: #34d399;
+}
+
+:root[data-theme="dark"][data-accent="rose"] {
+  --accent: #fb7185;
+  --accent-hover: #fda4af;
+  --accent-active: #fecdd3;
+  --accent-contrast: #0c0f16;
+  --focus-ring: #fb7185;
+}
+
+:root[data-theme="dark"][data-accent="cyan"] {
+  --accent: #22d3ee;
+  --accent-hover: #67e8f9;
+  --accent-active: #a5f3fc;
+  --accent-contrast: #0c0f16;
+  --focus-ring: #22d3ee;
 }
 
 * {

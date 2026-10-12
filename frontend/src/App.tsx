@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AccentPicker } from './components/AccentPicker'
 import { DemoSeeder } from './components/DemoSeeder'
 import { Leaderboard } from './components/Leaderboard'
 import { Logo, LogoMark } from './components/Logo'
@@ -19,7 +20,10 @@ export default function App() {
         <h1 className="brand">
           <Logo />
         </h1>
-        <ThemeToggle />
+        <div className="header-controls">
+          <AccentPicker />
+          <ThemeToggle />
+        </div>
       </header>
       <main>
         <p className="tagline">

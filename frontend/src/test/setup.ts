@@ -10,9 +10,11 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
   server.resetHandlers()
   cleanup()
-  // Theme/tutorial choices persist in localStorage; clear them so one test
-  // cannot leak its preference into the next.
+  // Theme/accent/tutorial choices persist in localStorage and on <html>; clear
+  // both so one test cannot leak its preference into the next.
   localStorage.clear()
+  delete document.documentElement.dataset.theme
+  delete document.documentElement.dataset.accent
 })
 
 afterAll(() => server.close())
