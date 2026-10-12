@@ -85,13 +85,34 @@
             }
           },
           "400": {
-            "description": "limit outside 1..=100, or offset too large"
+            "description": "limit outside 1..=100, or offset too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "500": {
-            "description": "Leaderboard store failed"
+            "description": "Leaderboard store failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Leaderboard store did not answer in time"
+            "description": "Leaderboard store did not answer in time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         }
       }
@@ -128,16 +149,44 @@
             }
           },
           "400": {
-            "description": "Blank or overlong player_id"
+            "description": "Blank or overlong player_id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Player has no standing yet"
+            "description": "Player has no standing yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "500": {
-            "description": "Leaderboard store failed"
+            "description": "Leaderboard store failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Leaderboard store did not answer in time"
+            "description": "Leaderboard store did not answer in time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         }
       }
@@ -181,10 +230,24 @@
             }
           },
           "400": {
-            "description": "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000"
+            "description": "Invalid payload, blank/overlong player_id, or score outside 0..=1_000_000_000",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "500": {
-            "description": "Could not store the event"
+            "description": "Could not store the event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         }
       }
@@ -208,10 +271,24 @@
             }
           },
           "500": {
-            "description": "Leaderboard store failed"
+            "description": "Leaderboard store failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Leaderboard store did not answer in time"
+            "description": "Leaderboard store did not answer in time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
           }
         }
       }
@@ -219,6 +296,20 @@
   },
   "components": {
     "schemas": {
+      "ErrorBody": {
+        "type": "object",
+        "description": "The JSON body carried by every [`ApiError`] response.\n\nPublic and [`ToSchema`]-derived so the OpenAPI document can describe error\nresponses with a real schema (and clients can generate an error type) rather\nthan a bare description.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable, client-safe error message.",
+            "example": "bad request: score must be between 0 and 1000000000"
+          }
+        }
+      },
       "HealthBody": {
         "type": "object",
         "required": [
