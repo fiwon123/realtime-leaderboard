@@ -10,6 +10,9 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {
   server.resetHandlers()
   cleanup()
+  // Theme/tutorial choices persist in localStorage; clear them so one test
+  // cannot leak its preference into the next.
+  localStorage.clear()
 })
 
 afterAll(() => server.close())

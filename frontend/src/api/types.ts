@@ -29,6 +29,22 @@ export interface LeaderboardEntry {
 
 export interface LeaderboardResponse {
   entries: LeaderboardEntry[]
+  /** Players on the board in total, independent of the requested page. */
+  total: number
+}
+
+/** `GET /stats` — board size and peak score. */
+export interface StatsResponse {
+  players: number
+  /** Highest score on the board, or `null` when it is empty. */
+  top_score: number | null
+}
+
+/** `GET /healthz` — backing-store health. */
+export interface HealthResponse {
+  status: string
+  postgres: boolean
+  redis: boolean
 }
 
 /** Error envelope from the API: every 4xx/5xx body is `{ "error": "..." }`. */

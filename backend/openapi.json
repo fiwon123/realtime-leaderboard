@@ -188,6 +188,33 @@
           }
         }
       }
+    },
+    "/stats": {
+      "get": {
+        "tags": [
+          "leaderboard"
+        ],
+        "summary": "`GET /stats` — board size and peak score.",
+        "operationId": "get_stats",
+        "responses": {
+          "200": {
+            "description": "Board size and peak score",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Leaderboard store failed"
+          },
+          "503": {
+            "description": "Leaderboard store did not answer in time"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -241,7 +268,8 @@
       "LeaderboardResponse": {
         "type": "object",
         "required": [
-          "entries"
+          "entries",
+          "total"
         ],
         "properties": {
           "entries": {
@@ -249,6 +277,12 @@
             "items": {
               "$ref": "#/components/schemas/LeaderboardEntry"
             }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total number of players with a standing on the board (independent of the\nrequested page), so a client can render paging controls.",
+            "minimum": 0
           }
         }
       },
@@ -331,6 +365,28 @@
             "type": "integer",
             "format": "int64",
             "example": 100
+          }
+        }
+      },
+      "StatsResponse": {
+        "type": "object",
+        "required": [
+          "players"
+        ],
+        "properties": {
+          "players": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Number of players with a standing on the board.",
+            "minimum": 0
+          },
+          "top_score": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Highest score on the board, or `null` when it is empty."
           }
         }
       }

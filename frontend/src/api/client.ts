@@ -1,8 +1,10 @@
 import type {
+  HealthResponse,
   LeaderboardResponse,
   RankResponse,
   ScoreEvent,
   ScoreEventResponse,
+  StatsResponse,
 } from './types'
 
 // Empty by default: requests go to the same origin, which the Vite dev server
@@ -89,4 +91,14 @@ export function getLeaderboard(
     offset: String(offset),
   })
   return request<LeaderboardResponse>(`/leaderboard?${params.toString()}`)
+}
+
+/** `GET /stats` — board size and peak score. */
+export function getStats(): Promise<StatsResponse> {
+  return request<StatsResponse>('/stats')
+}
+
+/** `GET /healthz` — backing-store health. */
+export function getHealth(): Promise<HealthResponse> {
+  return request<HealthResponse>('/healthz')
 }

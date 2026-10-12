@@ -108,6 +108,30 @@ pub async fn top(
         .await
 }
 
+/// Number of players with a standing on the board (`ZCARD`).
+pub async fn count(conn: &mut ConnectionManager) -> redis::RedisResult<u64> {
+    redis::cmd("ZCARD")
+        .arg(LEADERBOARD_KEY)
+        .query_async(conn)
+        .await
+}
+
+/// Highest decoded score on the board, or `None` when it is empty.
+pub async fn peak(conn: &mut ConnectionManager) -> redis::RedisResult<Option<i64>> {
+    let top = redis::cmd("ZREVRANGE")
+        .arg(LEADERBOARD_KEY)
+        .arg(0)
+        .arg(0)
+        .arg("WITHSCORES")
+        .query_async::<Vec<(String, f64)>>(conn)
+        .await?;
+
+    Ok(top
+        .into_iter()
+        .next()
+        .map(|(_player_id, composite)| decode_score(composite)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

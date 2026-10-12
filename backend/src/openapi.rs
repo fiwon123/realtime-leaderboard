@@ -11,6 +11,7 @@ use crate::routes::health::HealthBody;
 use crate::routes::leaderboard::{LeaderboardEntry, LeaderboardResponse};
 use crate::routes::rank::RankResponse;
 use crate::routes::scores::{ScoreEvent, ScoreEventResponse};
+use crate::routes::stats::StatsResponse;
 
 /// The whole API, assembled from the handler annotations.
 #[derive(OpenApi)]
@@ -20,6 +21,7 @@ use crate::routes::scores::{ScoreEvent, ScoreEventResponse};
         crate::routes::scores::submit_score,
         crate::routes::rank::get_rank,
         crate::routes::leaderboard::get_leaderboard,
+        crate::routes::stats::get_stats,
     ),
     components(schemas(
         HealthBody,
@@ -28,6 +30,7 @@ use crate::routes::scores::{ScoreEvent, ScoreEventResponse};
         LeaderboardEntry,
         LeaderboardResponse,
         RankResponse,
+        StatsResponse,
     )),
     info(
         title = "realtime-leaderboard API",
@@ -56,6 +59,7 @@ mod tests {
             "/scores",
             "/players/{player_id}/rank",
             "/leaderboard",
+            "/stats",
         ] {
             assert!(
                 spec.paths.paths.contains_key(path),

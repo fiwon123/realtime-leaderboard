@@ -6,21 +6,31 @@ import { Skeleton } from './Skeleton'
 interface LeaderboardProps {
   /** Bump to force a reload (e.g. after a score is submitted). */
   refreshKey?: number
+  /** Live-mode poll interval in milliseconds; overridable for tests. */
+  autoRefreshMs?: number
 }
 
 const PAGE_SIZE = 10
+const DEFAULT_AUTO_REFRESH_MS = 5000
 
-export function Leaderboard({ refreshKey = 0 }: LeaderboardProps) {
+export function Leaderboard({
+  refreshKey = 0,
+  autoRefreshMs = DEFAULT_AUTO_REFRESH_MS,
+}: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [total, setTotal] = useState(0)
+  const [offset, setOffset] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [live, setLive] = useState(false)
 
-  // No state is set before the first `await`, so the effect below only ever
-  // updates state from the async continuation (not synchronously on mount).
-  const load = useCallback(async () => {
+  // No state is set before the first `await`, so the effects below only ever
+  // update state from the async continuation (not synchronously on mount).
+  const load = useCallback(async (from: number) => {
     try {
-      const data = await getLeaderboard(PAGE_SIZE, 0)
+      const data = await getLeaderboard(PAGE_SIZE, from)
       setEntries(data.entries)
+      setTotal(data.total ?? 0)
       setError(null)
     } catch (err) {
       setError(
@@ -36,22 +46,53 @@ export function Leaderboard({ refreshKey = 0 }: LeaderboardProps) {
   // synchronously. The rule cannot see through the async boundary.
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect
-    void load()
-  }, [load, refreshKey])
+    void load(offset)
+  }, [load, offset, refreshKey])
+
+  // Live mode re-fetches the current page on an interval until toggled off.
+  useEffect(() => {
+    if (!live) {
+      return
+    }
+    const id = setInterval(() => {
+      void load(offset)
+    }, autoRefreshMs)
+    return () => clearInterval(id)
+  }, [live, offset, load, autoRefreshMs])
 
   function refresh() {
     setLoading(true)
     setError(null)
-    void load()
+    void load(offset)
   }
+
+  function goTo(next: number) {
+    setLoading(true)
+    setOffset(next)
+  }
+
+  const hasPrev = offset > 0
+  const hasNext = offset + PAGE_SIZE < total
+  const firstShown = entries.length === 0 ? 0 : offset + 1
+  const lastShown = offset + entries.length
 
   return (
     <section aria-labelledby="leaderboard-heading">
       <div className="section-header">
         <h2 id="leaderboard-heading">Leaderboard</h2>
-        <button type="button" onClick={refresh} disabled={loading}>
-          Refresh
-        </button>
+        <div className="section-actions">
+          <button
+            type="button"
+            className="toggle"
+            aria-pressed={live}
+            onClick={() => setLive((on) => !on)}
+          >
+            {live ? 'Live: on' : 'Live: off'}
+          </button>
+          <button type="button" onClick={refresh} disabled={loading}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error !== null && <p role="alert" className="error">{error}</p>}
@@ -73,24 +114,46 @@ export function Leaderboard({ refreshKey = 0 }: LeaderboardProps) {
       )}
 
       {entries.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Rank</th>
-              <th scope="col">Player</th>
-              <th scope="col">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.player_id}>
-                <td>{entry.rank}</td>
-                <td>{entry.player_id}</td>
-                <td>{entry.score}</td>
+        <>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Player</th>
+                <th scope="col">Score</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {entries.map((entry) => (
+                <tr key={entry.player_id}>
+                  <td>{entry.rank}</td>
+                  <td>{entry.player_id}</td>
+                  <td>{entry.score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="pager">
+            <button
+              type="button"
+              onClick={() => goTo(Math.max(0, offset - PAGE_SIZE))}
+              disabled={!hasPrev || loading}
+            >
+              Newer
+            </button>
+            <span className="pager-status" role="status">
+              {firstShown}–{lastShown} of {total}
+            </span>
+            <button
+              type="button"
+              onClick={() => goTo(offset + PAGE_SIZE)}
+              disabled={!hasNext || loading}
+            >
+              Older
+            </button>
+          </div>
+        </>
       )}
     </section>
   )

@@ -4,6 +4,7 @@ pub mod health;
 pub mod leaderboard;
 pub mod rank;
 pub mod scores;
+pub mod stats;
 
 use std::time::Duration;
 
