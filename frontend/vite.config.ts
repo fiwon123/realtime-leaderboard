@@ -20,6 +20,7 @@ export default defineConfig({
       '/leaderboard': apiTarget,
       '/players': apiTarget,
       '/healthz': apiTarget,
+      '/swagger-ui': apiTarget,
     },
   },
   test: {
