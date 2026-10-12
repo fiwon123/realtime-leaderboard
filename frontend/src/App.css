@@ -6,7 +6,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
-  max-width: 60rem;
+  max-width: 66rem;
   margin: 0 auto;
   padding: var(--space-5) var(--space-4) 0;
 }
@@ -70,7 +70,7 @@
 }
 
 main {
-  max-width: 60rem;
+  max-width: 66rem;
   margin: 0 auto;
   padding: var(--space-4) var(--space-4) var(--space-6);
 }
@@ -80,11 +80,42 @@ main {
   color: var(--text-muted);
 }
 
+/*
+ * Shell layout: on wide screens the leaderboard owns a dominant (2fr) column
+ * with the other panels stacked in a 1fr side rail; below the breakpoint it
+ * collapses to a single column in DOM order.
+ */
 .panels {
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 60rem) {
+  .panels {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas:
+      "board score"
+      "board rank"
+      "board stats"
+      "board seeder";
+  }
+
+  .panel-board {
+    grid-area: board;
+  }
+  .panel-score {
+    grid-area: score;
+  }
+  .panel-rank {
+    grid-area: rank;
+  }
+  .panel-stats {
+    grid-area: stats;
+  }
+  .panel-seeder {
+    grid-area: seeder;
+  }
 }
 
 section {
@@ -251,6 +282,65 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* Top-3 rank badges and the leader row highlight. */
+.medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  color: #1f2937;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.medal-1 {
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+
+.medal-2 {
+  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+}
+
+.medal-3 {
+  background: linear-gradient(135deg, #f0c098, #b45309);
+}
+
+tbody tr.leader {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+tbody tr.leader:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* Leaderboard empty state. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  text-align: center;
+}
+
+.empty-mark {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  opacity: 0.9;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-title {
+  font-weight: 600;
+}
+
 /* Loading placeholders for the leaderboard's first fetch. */
 .skeleton-list {
   display: flex;
@@ -271,7 +361,7 @@ tbody tr:last-child td {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  max-width: 60rem;
+  max-width: 66rem;
   margin: 0 auto;
   padding: var(--space-4) var(--space-4) var(--space-6);
   border-top: 1px solid var(--border);
@@ -313,6 +403,49 @@ tbody tr:last-child td {
   color: var(--text-muted);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* Page-size selector in the section header. */
+.page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.page-size select {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Inline, low-emphasis action (e.g. "Show on leaderboard"). */
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.link-button:hover:not(:disabled),
+.link-button:active:not(:disabled) {
+  background: none;
+  color: var(--accent-hover);
+  transform: none;
+}
+
+.rank-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 /* Stats panel */
@@ -364,17 +497,57 @@ tbody tr:last-child td {
   border-color: color-mix(in srgb, var(--error) 40%, transparent);
 }
 
-/* Tutorial */
+/* Tutorial: a compact one-row strip rather than a full panel. */
 .tutorial {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
   margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
 }
 
-.tutorial-steps {
+.tutorial-title {
   margin: 0;
-  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--text-muted);
 }
 
-.tutorial-steps li + li {
-  margin-top: 0.25rem;
+.tutorial-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tutorial-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  counter-increment: step;
+}
+
+.tutorial-steps li::before {
+  content: counter(step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.tutorial-dismiss {
+  margin-left: auto;
 }

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ApiError, submitScore } from '../api/client'
+import { ApiError, getRank, submitScore } from '../api/client'
 import type { ScoreEventResponse } from '../api/types'
 import { newEventId } from '../lib/uuid'
 
@@ -13,6 +13,7 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
   const [playerId, setPlayerId] = useState('')
   const [score, setScore] = useState('')
   const [result, setResult] = useState<ScoreEventResponse | null>(null)
+  const [rankNote, setRankNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -28,6 +29,7 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
     event.preventDefault()
     setError(null)
     setResult(null)
+    setRankNote(null)
 
     const player = playerId.trim()
     const parsedScore = Number(score)
@@ -55,6 +57,17 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
       pending.current = null // Success: the next submission is a new event.
       setResult(response)
       onSubmitted?.()
+
+      // Best-effort: show where the player now sits. The submit already
+      // succeeded, so a failed rank read must not surface as an error.
+      if (!response.duplicate) {
+        try {
+          const { rank } = await getRank(player)
+          setRankNote(` — now rank ${rank}`)
+        } catch {
+          // Leave the note off; the stored confirmation still shows.
+        }
+      }
     } catch (err) {
       // Keep `pending` intact so a retry resends the same event_id.
       setError(
@@ -68,7 +81,7 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
   }
 
   return (
-    <section aria-labelledby="score-form-heading">
+    <section className="panel panel-score" aria-labelledby="score-form-heading">
       <h2 id="score-form-heading">Submit a score</h2>
       <form onSubmit={handleSubmit}>
         <label htmlFor="score-player">Player</label>
@@ -101,7 +114,7 @@ export function ScoreForm({ onSubmitted }: ScoreFormProps) {
         <p role="status" className="success">
           {result.duplicate
             ? `Replay: event ${result.event_id} was already ingested.`
-            : `Stored ${result.score} for ${result.player_id}.`}
+            : `Stored ${result.score} for ${result.player_id}${rankNote ?? ''}.`}
         </p>
       )}
     </section>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AccentPicker } from './components/AccentPicker'
 import { DemoSeeder } from './components/DemoSeeder'
 import { Leaderboard } from './components/Leaderboard'
@@ -8,11 +8,44 @@ import { ScoreForm } from './components/ScoreForm'
 import { StatsPanel } from './components/StatsPanel'
 import { ThemeToggle } from './components/ThemeToggle'
 import { Tutorial } from './components/Tutorial'
+import { offsetForRank, pagingUrl, parsePaging } from './lib/paging'
+import type { PageSize, Paging } from './lib/paging'
 import './App.css'
 
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
+  // Leaderboard paging lives here so the URL can reflect it and RankLookup can
+  // drive it. It is seeded from (and kept in) the query string.
+  const [paging, setPaging] = useState<Paging>(() =>
+    parsePaging(window.location.search),
+  )
   const bump = () => setRefreshKey((key) => key + 1)
+
+  const commitPaging = useCallback((next: Paging) => {
+    setPaging(next)
+    window.history.pushState({}, '', pagingUrl(next))
+  }, [])
+
+  // Browser Back/Forward re-syncs the board without pushing a new entry.
+  useEffect(() => {
+    function onPopState() {
+      setPaging(parsePaging(window.location.search))
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  function goToOffset(offset: number) {
+    commitPaging({ ...paging, offset: Math.max(0, offset) })
+  }
+
+  function changeLimit(limit: PageSize) {
+    commitPaging({ limit, offset: 0 })
+  }
+
+  function jumpToRank(rank: number) {
+    commitPaging({ ...paging, offset: offsetForRank(rank, paging.limit) })
+  }
 
   return (
     <>
@@ -32,8 +65,14 @@ export default function App() {
         <Tutorial />
         <div className="panels">
           <ScoreForm onSubmitted={bump} />
-          <RankLookup />
-          <Leaderboard refreshKey={refreshKey} />
+          <RankLookup onJumpToRank={jumpToRank} />
+          <Leaderboard
+            refreshKey={refreshKey}
+            offset={paging.offset}
+            limit={paging.limit}
+            onOffsetChange={goToOffset}
+            onLimitChange={changeLimit}
+          />
           <StatsPanel />
           <DemoSeeder onSeeded={bump} />
         </div>

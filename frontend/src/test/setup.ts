@@ -15,6 +15,9 @@ afterEach(() => {
   localStorage.clear()
   delete document.documentElement.dataset.theme
   delete document.documentElement.dataset.accent
+  // The leaderboard syncs paging into the query string; reset it so one test
+  // cannot leak a page/URL into the next.
+  window.history.replaceState({}, '', '/')
 })
 
 afterAll(() => server.close())

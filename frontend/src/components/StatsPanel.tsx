@@ -64,7 +64,7 @@ export function StatsPanel() {
   }, [])
 
   return (
-    <section aria-labelledby="stats-heading">
+    <section className="panel panel-stats" aria-labelledby="stats-heading">
       <div className="section-header">
         <h2 id="stats-heading">Board stats</h2>
         <HealthBadge health={health} />

@@ -9,8 +9,8 @@ interface LogoMarkProps {
  *
  * Rendered inline (not an `<img>`) so it scales crisply and can pick up layout
  * styles. `useId` keeps the gradient id unique when the mark appears more than
- * once on a page (header and footer). `TrophyMark` is exported for the
- * leaderboard empty state, which reuses the same silhouette.
+ * once on a page (header, footer, and the leaderboard empty state, which reuses
+ * the same silhouette).
  */
 export function LogoMark({ className }: LogoMarkProps) {
   const gradientId = `logo-trophy-${useId().replace(/:/g, '')}`
