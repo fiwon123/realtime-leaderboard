@@ -212,4 +212,65 @@ describe('Leaderboard', () => {
     await user.click(screen.getByRole('button', { name: /older/i }))
     expect(onOffsetChange).toHaveBeenCalledWith(10)
   })
+
+  it('stamps when the board was last updated', async () => {
+    render(<Leaderboard />)
+
+    await screen.findByText('alice')
+    expect(await screen.findByText(/updated just now/i)).toBeInTheDocument()
+  })
+
+  it('shows rank movement after a refresh on the same page', async () => {
+    let load = 0
+    server.use(
+      http.get('/leaderboard', () => {
+        load += 1
+        const entries =
+          load === 1
+            ? [
+                { rank: 1, player_id: 'alice', score: 900 },
+                { rank: 2, player_id: 'bob', score: 700 },
+              ]
+            : [
+                { rank: 1, player_id: 'bob', score: 700 },
+                { rank: 2, player_id: 'alice', score: 900 },
+              ]
+        return HttpResponse.json({ entries, total: 2 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+
+    // alice fell 1→2, bob rose 2→1.
+    expect(await screen.findByText('down 1')).toBeInTheDocument()
+    expect(screen.getByText('up 1')).toBeInTheDocument()
+  })
+
+  it('does not show movement after paging to a different page', async () => {
+    server.use(
+      http.get('/leaderboard', ({ request }) => {
+        const offset = Number(
+          new URL(request.url).searchParams.get('offset') ?? '0',
+        )
+        const entries =
+          offset === 0
+            ? [{ rank: 1, player_id: 'alice', score: 900 }]
+            : [{ rank: 11, player_id: 'carol', score: 100 }]
+        return HttpResponse.json({ entries, total: 11 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /older/i }))
+    await screen.findByText('carol')
+
+    expect(container.querySelectorAll('.movement')).toHaveLength(0)
+  })
 })
