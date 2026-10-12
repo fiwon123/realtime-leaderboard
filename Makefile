@@ -43,10 +43,10 @@ dev-up: preflight
 # 0.0.0.0:5173 (host:true) and the compose file publishes that port, so it is
 # reachable at http://localhost:5173 (Vite falls back to the next free port if
 # 5173 is held by something else). The API is in the same container on :8080,
-# Vite's default proxy target. Waits for the container, installs dependencies
-# only when the vite binary is missing, restarts any previous instance, starts
-# Vite detached, then waits for it to report ready — failing loudly otherwise.
-# Logs: /tmp/vite.log.
+# Vite's default proxy target. Waits for the container, refreshes dependencies
+# when the lockfile is newer than the installed snapshot (or when the vite
+# binary is missing), restarts any previous instance, starts Vite detached, then
+# waits for it to report ready — failing loudly otherwise. Logs: /tmp/vite.log.
 #
 # The restart step matches the running Vite by argv (`node …/node_modules/.bin/vite`).
 # `pkill -f` also matches the shell running it, so the pattern is anchored on the
@@ -57,7 +57,7 @@ dev-up: preflight
 dev-frontend: preflight
 	@i=0; while [ $$i -lt 30 ]; do docker compose exec -T dev true >/dev/null 2>&1 && break; sleep 1; i=$$((i+1)); done
 	@docker compose exec -T dev true >/dev/null 2>&1 || { echo "dev container is not running; run 'make dev-up' first" >&2; exit 1; }
-	@docker compose exec -T dev bash -lc 'pkill -f "/node_modules/[.]bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
+	@docker compose exec -T dev bash -lc 'pkill -f "/node_modules/[.]bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] && [ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
 	@docker compose exec -T -d dev bash -lc 'cd /workspace/frontend && exec npm run dev >/tmp/vite.log 2>&1'
 	@i=0; while [ $$i -lt 30 ]; do \
 	  if docker compose exec -T dev grep -q "ready in" /tmp/vite.log 2>/dev/null; then \
