@@ -229,17 +229,27 @@ async fn leaderboard_pagination_respects_limit_and_offset() {
         players.push((player, score));
     }
 
+    // The board is shared with real data and other tests, so these players are
+    // not necessarily ranks 1..5 and other members may interleave between them.
+    // Page from the top far enough to cover the lowest player, then assert only
+    // *their* relative order — never the absolute positions.
+    let lowest_rank = expected_rank(&state, &players.last().unwrap().0).await;
+
     let mut seen = Vec::new();
-    for offset in [0, 2, 4] {
+    let mut offset: u64 = 0;
+    while offset < lowest_rank {
         let (status, body) = get(&app, &format!("/leaderboard?limit=2&offset={offset}")).await;
         assert_eq!(status, StatusCode::OK);
-        for entry in body["entries"].as_array().expect("entries array") {
+        let entries = body["entries"].as_array().expect("entries array");
+        assert!(entries.len() <= 2, "a page must not exceed its limit");
+        for entry in entries {
             let player_id = entry["player_id"].as_str().unwrap();
             if let Some((_, expected_score)) = players.iter().find(|(id, _)| id == player_id) {
                 assert_eq!(entry["score"].as_i64().unwrap(), *expected_score);
                 seen.push(*expected_score);
             }
         }
+        offset += 2;
     }
 
     assert_eq!(
