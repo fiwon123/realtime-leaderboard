@@ -4,8 +4,8 @@
     "title": "realtime-leaderboard API",
     "description": "Submit score events and read live leaderboard rankings.",
     "license": {
-      "name": "MIT",
-      "identifier": "MIT"
+      "name": "LicenseRef-AllRightsReserved",
+      "identifier": "LicenseRef-AllRightsReserved"
     },
     "version": "0.1.0"
   },
