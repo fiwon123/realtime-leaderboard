@@ -18,9 +18,19 @@
 
 </div>
 
-| Dark (default) | Light |
-|----------------|-------|
-| ![Realtime Leaderboard — dark theme](docs/screenshot-dark.png) | ![Realtime Leaderboard — light theme](docs/screenshot-light.png) |
+![Realtime Leaderboard — dark theme](docs/screenshot-dark.png)
+
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Pre Requisites](#pre-requisites)
+- [Getting started](#getting-started)
+- [Project layout](#project-layout)
+- [API overview](#api-overview)
+- [Development](#development)
+- [License](#license)
 
 ---
 
@@ -54,32 +64,35 @@ Because the Redis board can drift, a `rebuild` binary recreates it from Postgres
   default, with a light mode and accent presets.
 - **Admin routes** — token-gated `DELETE /players/{id}` and `DELETE /scores`.
 
-## Architecture
+## Screenshots
 
-```text
-Client (browser / curl)
-  │  POST /scores
-  ▼
-Rust API (Axum on Tokio)
-  ├─→ PostgreSQL   durable score events (sqlx; migrations on startup)
-  └─→ Redis        sorted-set leaderboards (live rank + board reads)
-```
+The overview at the top of this page shows how it all fits together; the shots
+below zoom in on the parts that matter.
 
-Both Docker Compose services back the same API contract documented in
-`backend/openapi.json`.
+### Submit a score
 
-## Stack
+![Submit a score and see the new rank](docs/screenshot-score-submit.png)
 
-| Layer          | Choice                                                        |
-|----------------|---------------------------------------------------------------|
-| Backend        | Rust — Axum on Tokio, queried through `sqlx`                  |
-| Database       | PostgreSQL 16                                                  |
-| Cache / ranking| Redis 7 (sorted sets)                                          |
-| Frontend       | React 19 + TypeScript on Vite                                 |
-| Frontend tests | Vitest + Testing Library + MSW                                |
-| Dev environment| Docker Compose, with `mise` for toolchain pins                |
+`POST /scores` is idempotent on `event_id` and keeps the **best** score per
+player. The reply reports where the player now sits, so the submitter sees their
+new position without a second round trip.
 
-## Prerequisites
+### Look up a rank
+
+![Rank lookup showing a player's standing](docs/screenshot-rank-lookup.png)
+
+`GET /players/{player_id}/rank` returns a 1-based rank and best score straight
+from the Redis sorted set; **Show on leaderboard** pages the board to that rank.
+
+### The leaderboard
+
+![Leaderboard with medals, paging, and live refresh](docs/screenshot-leaderboard.png)
+
+`GET /leaderboard?limit=&offset=` pages the sorted set: top-3 medals, a row-size
+selector, an optional 5-second live refresh, and Previous/Next paging with a
+`1–10 of 12` status. Ties keep the earlier event in front.
+
+## Pre Requisites
 
 - **Rust `1.94`** — pinned in `mise.toml` and `backend/Cargo.toml`
   (`rust-version`). Install via [rustup](https://rustup.rs) or `mise install`.
@@ -93,8 +106,6 @@ offline cache, so builds work **without** a running database (that is what
 `SQLX_OFFLINE=true`, used by the Makefile and CI, relies on).
 
 ## Getting started
-
-### Option A — Docker Compose (recommended)
 
 Brings up Postgres, Redis, the API, and the Vite dev server:
 
@@ -125,24 +136,6 @@ make shell          # shell inside the sandbox
 > The API port publishes as `8082` on the host but the container listens on
 > `8080`; the frontend dev server proxies API calls to it, so requests are
 > same-origin and no CORS layer is needed.
-
-### Option B — Run it locally
-
-Copy the env template and start Postgres + Redis however you like (the values in
-`.env.example` point at the Compose host ports):
-
-```bash
-cp .env.example .env      # DATABASE_URL, REDIS_URL, PORT, (optional) ADMIN_TOKEN
-
-# Backend (from backend/) — migrations run automatically on startup
-cd backend
-cargo run                 # http://localhost:8080
-
-# Frontend (from frontend/) — in a second terminal
-cd frontend
-npm ci
-API_PROXY_TARGET=http://localhost:8080 npm run dev   # http://localhost:5173
-```
 
 ## Project layout
 
@@ -232,9 +225,8 @@ npm run build
 `make check` is the gate for feature branches. GitHub Actions runs the same jobs
 on `dev` → `main` pull requests.
 
-## Author
-
-**Felipe Inoue** — portfolio: [github.com/fiwon123/realtime-leaderboard](https://github.com/fiwon123/realtime-leaderboard)
+To run the API without Compose, start it from `backend/` with `cargo run`; it
+reads `DATABASE_URL` and `REDIS_URL` and applies migrations on startup.
 
 ## License
 
