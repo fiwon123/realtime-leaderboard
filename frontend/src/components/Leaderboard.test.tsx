@@ -68,10 +68,10 @@ describe('Leaderboard', () => {
     expect(await screen.findByText('alice')).toBeInTheDocument()
 
     // total 11 with a page size of 10 makes the next page reachable.
-    await user.click(screen.getByRole('button', { name: /older/i }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
     expect(await screen.findByText('carol')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /newer/i }))
+    await user.click(screen.getByRole('button', { name: /previous/i }))
     expect(await screen.findByText('alice')).toBeInTheDocument()
   })
 
@@ -186,7 +186,7 @@ describe('Leaderboard', () => {
       await screen.findByText(/no players on this page/i),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /newer/i }))
+    await user.click(screen.getByRole('button', { name: /previous/i }))
     expect(onOffsetChange).toHaveBeenCalledWith(10)
   })
 
@@ -209,7 +209,7 @@ describe('Leaderboard', () => {
     )
     await screen.findByText('alice')
 
-    await user.click(screen.getByRole('button', { name: /older/i }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
     expect(onOffsetChange).toHaveBeenCalledWith(10)
   })
 
@@ -268,7 +268,7 @@ describe('Leaderboard', () => {
     const { container } = render(<Leaderboard />)
     await screen.findByText('alice')
 
-    await user.click(screen.getByRole('button', { name: /older/i }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
     await screen.findByText('carol')
 
     expect(container.querySelectorAll('.movement')).toHaveLength(0)
