@@ -37,7 +37,7 @@ utoipa = { version = "5.5.0", features = ["uuid"] }
 # update raises a dependency past `rust-version = "1.94"`. `vendored` embeds the
 # Swagger UI dist instead of downloading it in the build script, so builds stay
 # hermetic/offline like the committed `.sqlx/` cache.
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum", "vendored"] }
+utoipa-swagger-ui = { version = "10.0.1", features = ["axum", "vendored"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
