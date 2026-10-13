@@ -1,21 +1,47 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { About } from './About'
 
 describe('About', () => {
-  it('reveals content and can trigger tutorial re-show', async () => {
-    const onShow = vi.fn()
-    const user = userEvent.setup()
-    render(<About showTutorialAgain={onShow} />)
+  it('renders the blurb', () => {
+    render(<About />)
 
-    const toggle = screen.getByRole('button', { name: /learn more/i })
-    expect(screen.queryByText(/real-time leaderboard/i)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/real-time leaderboard service/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /about this project/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('expands and minimizes the panel from its title', async () => {
+    const user = userEvent.setup()
+    render(<About />)
+
+    const region = screen.getByRole('region', { name: /about this project/i })
+    const toggle = within(region).getByRole('button', {
+      name: /about this project/i,
+    })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
     await user.click(toggle)
-    expect(screen.getByText(/real-time leaderboard/i)).toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('about-body')).toHaveAttribute('hidden')
 
-    await user.click(screen.getByRole('button', { name: /show tutorial again/i }))
-    expect(onShow).toHaveBeenCalledTimes(1)
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('about-body')).not.toHaveAttribute('hidden')
+  })
+
+  it('restores a minimized panel from localStorage', () => {
+    localStorage.setItem('panel:about:open', 'false')
+
+    render(<About />)
+
+    expect(
+      screen.getByRole('button', { name: /about this project/i }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('about-body')).toHaveAttribute('hidden')
   })
 })

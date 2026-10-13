@@ -5,13 +5,14 @@ import { server } from './mocks/server'
 
 // Fail the test on any request the handlers do not cover, so a typo'd endpoint
 // surfaces immediately instead of silently returning real network errors.
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+// msw v3 renamed this option from `onUnhandledRequest` to `onUnhandledFrame`.
+beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 
 afterEach(() => {
   server.resetHandlers()
   cleanup()
-  // Theme/accent/tutorial choices persist in localStorage and on <html>; clear
-  // both so one test cannot leak its preference into the next.
+  // Theme and accent choices persist in localStorage and on <html>; clear both
+  // so one test cannot leak its preference into the next.
   localStorage.clear()
   // The admin token lives in sessionStorage; clear it too so it cannot leak.
   sessionStorage.clear()

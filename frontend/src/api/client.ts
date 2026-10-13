@@ -99,10 +99,10 @@ export function getLeaderboard(
   return request<LeaderboardResponse>(`/leaderboard?${params.toString()}`)
 }
 
-/** `GET /players` — player ids starting with `prefix`, highest score first. */
+/** `GET /players` — player ids matching `prefix`, closest match first. */
 export function searchPlayers(
   prefix: string,
-  limit = 8,
+  limit = 5,
 ): Promise<PlayersResponse> {
   const params = new URLSearchParams({ prefix, limit: String(limit) })
   return request<PlayersResponse>(`/players?${params.toString()}`)

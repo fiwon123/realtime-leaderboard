@@ -99,11 +99,10 @@ jobs:
 
   msrv:
     runs-on: ubuntu-latest
-    # The utoipa-swagger-ui tree stays on Rust 1.83 only because Cargo.lock
-    # pins the rust-embed trio at 8.11.0. Building with the pinned toolchain
-    # fails fast when an update (Dependabot/`cargo update`) raises it to a
-    # version needing a newer compiler -- a change `stable` would accept,
-    # silently breaking `rust-version = "1.83"`.
+    # Guards the declared MSRV: the `rust` job above builds on `stable`, which
+    # would happily accept a lockfile update that silently raises the real
+    # minimum past `rust-version`. Building on the pinned toolchain fails fast
+    # when that happens. The pin tracks sqlx 0.9 (Rust 1.94).
     env:
       SQLX_OFFLINE: "true"
     defaults:
@@ -113,7 +112,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install the pinned toolchain
-        run: rustup toolchain install 1.83.0 --profile minimal --no-self-update
+        run: rustup toolchain install 1.94.0 --profile minimal --no-self-update
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
@@ -123,7 +122,7 @@ jobs:
       - name: Build with the MSRV toolchain
         # `--all-targets` also compiles the integration tests, so an MSRV break
         # in test code is caught too.
-        run: cargo +1.83.0 build --locked --all-targets
+        run: cargo +1.94.0 build --locked --all-targets
 
   frontend:
     runs-on: ubuntu-latest
@@ -135,7 +134,7 @@ jobs:
 
       - name: Set up Node
         # Node LTS; the major matches mise.toml and the Dockerfile.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'

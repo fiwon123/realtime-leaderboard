@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -61,13 +61,39 @@ describe('PlayerInput', () => {
     expect(prefixes).toEqual(['alice'])
   })
 
+  it('ranks the closest match first', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    // "al" is an exact id, so it must outrank the longer prefix "alice".
+    await user.type(screen.getByRole('combobox'), 'al')
+    await screen.findByRole('listbox')
+
+    const options = screen
+      .getAllByRole('option')
+      .map((option) => option.textContent)
+    expect(options).toEqual(['al', 'alice'])
+  })
+
+  it('highlights the matched part of a suggestion', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    await user.type(screen.getByRole('combobox'), 'li')
+    const option = await screen.findByRole('option', { name: 'alice' })
+
+    const match = within(option).getByText('li')
+    expect(match.tagName).toBe('STRONG')
+  })
+
   it('picks a suggestion with the keyboard', async () => {
     const onChange = vi.fn()
     const onSelect = vi.fn()
     const user = userEvent.setup()
     render(<Harness onChange={onChange} onSelect={onSelect} />)
 
-    await user.type(screen.getByRole('combobox'), 'al')
+    // No exact "ali" id exists, so the only suggestion (and the pick) is alice.
+    await user.type(screen.getByRole('combobox'), 'ali')
     await screen.findByRole('listbox')
 
     await user.keyboard('{ArrowDown}{Enter}')

@@ -1,47 +1,23 @@
-import { useState } from 'react'
+import { CollapsiblePanel } from './CollapsiblePanel'
 
-interface AboutProps {
-  showTutorialAgain?: () => void
-}
-
-export function About({ showTutorialAgain }: AboutProps) {
-  const [open, setOpen] = useState(false)
-
+/**
+ * The About panel — what the project is, not how to use it (that lives in the
+ * How to panel). Collapsible like How to, and expanded by default.
+ */
+export function About() {
   return (
-    <section className="panel panel-about" aria-labelledby="about-heading">
-      <div className="section-header">
-        <h2 id="about-heading">About</h2>
-        <button
-          type="button"
-          className="toggle"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-        >
-          {open ? 'Hide' : 'Learn more'}
-        </button>
+    <CollapsiblePanel
+      id="about"
+      title="About this project"
+      className="panel panel-about"
+    >
+      <div className="about-content">
+        <p>
+          A real-time leaderboard service. Score events are submitted, stored
+          durably in PostgreSQL, and ranked live in Redis sorted sets — so
+          rankings stay low-latency as the board grows.
+        </p>
       </div>
-      {open && (
-        <div className="about-content">
-          <p className="muted">
-            This is a real-time leaderboard service. Score events are submitted,
-            stored durably in PostgreSQL, and ranked live in Redis.
-          </p>
-          <ol className="tutorial-steps">
-            <li>Submit a score event for a player.</li>
-            <li>Look up any player&apos;s live rank.</li>
-            <li>Page the top of the board, or turn on Live to watch it update.</li>
-          </ol>
-          {showTutorialAgain !== undefined && (
-            <button
-              type="button"
-              className="tutorial-dismiss"
-              onClick={showTutorialAgain}
-            >
-              Show tutorial again
-            </button>
-          )}
-        </div>
-      )}
-    </section>
+    </CollapsiblePanel>
   )
 }

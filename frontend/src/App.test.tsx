@@ -104,7 +104,7 @@ describe('App', () => {
     render(<App />)
     await screen.findByText('alice')
 
-    await user.click(screen.getByRole('button', { name: /older/i }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
     await screen.findByText('zed')
 
     expect(window.location.search).toBe('?offset=10')
@@ -151,23 +151,55 @@ describe('App', () => {
     expect(await screen.findByText(/healthy/i)).toBeInTheDocument()
   })
 
-  it('re-shows the tutorial from the How to link', async () => {
+  it('expands and minimizes the How to use panel from its title', async () => {
     const user = userEvent.setup()
     render(<App />)
 
+    const howTo = screen.getByRole('region', { name: /how to use/i })
+    const toggle = within(howTo).getByRole('button', { name: /how to use/i })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(within(howTo).getAllByRole('listitem')).toHaveLength(3)
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('howto-body')).toHaveAttribute('hidden')
+    expect(within(howTo).queryByRole('listitem')).not.toBeInTheDocument()
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('howto-body')).not.toHaveAttribute('hidden')
+    expect(within(howTo).getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  it('keeps About visible and collapses it from its title', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const aboutRegion = screen.getByRole('region', {
+      name: /about this project/i,
+    })
     expect(
-      screen.getByRole('heading', { name: /how it works/i }),
+      within(aboutRegion).getByText(/real-time leaderboard service/i),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /got it/i }))
+    // The header/footer nav pills are gone — the panels collapse from their
+    // titles instead.
     expect(
-      screen.queryByRole('heading', { name: /how it works/i }),
+      screen.queryByRole('button', { name: /^how to$/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^about$/i }),
     ).not.toBeInTheDocument()
 
-    // Two "How to" links exist (header + footer); either re-shows it.
-    await user.click(screen.getAllByRole('button', { name: /how to/i })[0])
-    expect(
-      await screen.findByRole('heading', { name: /how it works/i }),
-    ).toBeInTheDocument()
+    const toggle = within(aboutRegion).getByRole('button', {
+      name: /about this project/i,
+    })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('about-body')).toHaveAttribute('hidden')
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('about-body')).not.toHaveAttribute('hidden')
   })
 })

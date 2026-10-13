@@ -1,17 +1,20 @@
 /*
  * Design tokens + base styling.
  *
- * Light is the default. Dark applies when <html> carries `data-theme="dark"`,
- * which the inline bootstrap in index.html sets from the OS preference (and,
- * later, the user's saved choice) before first paint so there is no flash of
- * the wrong theme. Component styles compose from these tokens.
+ * Dark is the default. Light applies when <html> carries `data-theme="light"`,
+ * which the inline bootstrap in index.html sets from the user's saved choice
+ * before first paint, so there is no flash of the wrong theme. Both themes are
+ * fully themed — panels take the surface/text/accent of the active theme.
+ * Component styles compose from these tokens.
  */
 
 :root {
   color-scheme: light;
 
-  /* Surfaces + text */
-  --bg: #f6f7fb;
+  /* Surfaces + text (light values). The dark theme overrides the whole set in
+     the `[data-theme="dark"]` block below; panels follow whichever theme is
+     active. */
+  --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #eceff6;
   --text: #15181f;
@@ -35,8 +38,8 @@
   --accent-swatch-cyan: #0e7490;
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgb(16 19 30 / 6%), 0 1px 3px rgb(16 19 30 / 8%);
-  --shadow-md: 0 6px 18px rgb(16 19 30 / 10%);
+  --shadow-sm: 0 1px 2px rgb(16 19 30 / 6%), 0 4px 14px rgb(16 19 30 / 8%);
+  --shadow-md: 0 8px 24px rgb(16 19 30 / 12%);
 
   /* Radii */
   --radius-sm: 0.35rem;
