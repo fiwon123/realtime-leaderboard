@@ -12,15 +12,13 @@
     <title>Realtime Leaderboard</title>
     <script>
       // Resolve theme + accent before first paint so neither flashes the wrong
-      // value. The saved choice wins; otherwise follow the OS / default accent.
+      // value. The saved choice wins; otherwise dark is the default. Accent
+      // falls back to indigo when no stored choice exists.
       ;(() => {
         try {
           const saved = localStorage.getItem('theme')
           const choice = saved === 'light' || saved === 'dark' ? saved : null
-          const dark =
-            choice === null
-              ? window.matchMedia('(prefers-color-scheme: dark)').matches
-              : choice === 'dark'
+          const dark = choice === null ? true : choice === 'dark'
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
 
           const accents = ['indigo', 'amber', 'emerald', 'rose', 'cyan']
@@ -29,7 +27,7 @@
             document.documentElement.dataset.accent = accent
           }
         } catch {
-          // localStorage/matchMedia unavailable: keep the light default.
+          // localStorage unavailable: keep the dark default.
         }
       })()
     </script>

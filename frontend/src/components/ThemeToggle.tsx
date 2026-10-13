@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react'
 
-function prefersDark(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-color-scheme: dark)').matches
-    : false
-}
-
 function storedTheme(): 'light' | 'dark' {
   try {
     const saved = localStorage.getItem('theme')
@@ -13,9 +7,9 @@ function storedTheme(): 'light' | 'dark' {
       return saved
     }
   } catch {
-    // localStorage unavailable; fall back to the system preference.
+    // localStorage unavailable; fall back to the dark default.
   }
-  return prefersDark() ? 'dark' : 'light'
+  return 'dark'
 }
 
 /**
@@ -64,9 +58,9 @@ function ThemeIcon({ theme }: { theme: 'light' | 'dark' }) {
 }
 
 /**
- * Cycles system → light → dark, writing `data-theme` on <html> (which the
+ * Toggles between light and dark, writing `data-theme` on <html> (which the
  * pre-paint bootstrap in index.html already understands) and persisting the
- * choice. "system" clears the stored override.
+ * choice. Dark is the default on first visit.
  */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>(storedTheme)

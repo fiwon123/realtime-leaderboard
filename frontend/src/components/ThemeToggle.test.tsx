@@ -28,6 +28,15 @@ describe('ThemeToggle', () => {
     }
   })
 
+  it('defaults to dark on first visit', () => {
+    render(<ThemeToggle />)
+
+    expect(
+      screen.getByRole('button', { name: /theme: dark/i }),
+    ).toBeInTheDocument()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
   it('starts from a persisted choice', () => {
     localStorage.setItem('theme', 'dark')
     render(<ThemeToggle />)
