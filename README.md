@@ -6,19 +6,21 @@
 
 **A real-time leaderboard service — submit score events, read a player's rank, and page through the top of the board, with durable events in PostgreSQL and live rankings in Redis.**
 
+![Rust 1.94.0](https://img.shields.io/badge/rustc-1.94.0-black?logo=rust&logoColor=white)
+![Node 22](https://img.shields.io/badge/node-22-339933?logo=nodedotjs&logoColor=white)
+![License: all rights reserved](https://img.shields.io/badge/license-All%20rights%20reserved-8b949e)
+
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Redis 7](https://img.shields.io/badge/Redis-7-FF4438?logo=redis&logoColor=white)
+![Axum on Tokio](https://img.shields.io/badge/Axum-on%20Tokio-black)
+![React 19](https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB)
+![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+
 </div>
 
-<!--
-  Screenshot placeholder
-  ----------------------
-  Capture the running app and save it as docs/screenshot.png, then delete this
-  comment and uncomment the image below.
-
-  A good shot: the default dark theme with a few scores submitted, the
-  leaderboard populated, and a rank lookup result visible.
-
-  ![Realtime Leaderboard UI](docs/screenshot.png)
--->
+| Dark (default) | Light |
+|----------------|-------|
+| ![Realtime Leaderboard — dark theme](docs/screenshot-dark.png) | ![Realtime Leaderboard — light theme](docs/screenshot-light.png) |
 
 ---
 
