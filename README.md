@@ -50,6 +50,8 @@ This project splits the two concerns:
 
 Because the Redis board can drift, a `rebuild` binary recreates it from Postgres.
 
+**Project description:** [Real-time Leaderboard System](https://roadmap.sh/projects/realtime-leaderboard-system)
+
 ## Features
 
 - **Score ingest** — `POST /scores`, idempotent on `event_id`; best (max) score
