@@ -56,6 +56,7 @@ pub struct ApiDoc;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use utoipa::openapi::RefOr;
 
     /// Guards against a handler being added without joining `ApiDoc` — the
     /// drift this module exists to prevent.
@@ -91,7 +92,15 @@ mod tests {
             .as_ref()
             .and_then(|op| op.parameters.as_ref())
             .expect("leaderboard has parameters");
-        let names: Vec<&str> = params.iter().map(|p| p.name.as_str()).collect();
+        // utoipa 6 models each parameter as `RefOr<Parameter>` — a `$ref` or an
+        // inline parameter. The leaderboard's `limit`/`offset` are inline.
+        let names: Vec<&str> = params
+            .iter()
+            .filter_map(|p| match p {
+                RefOr::T(param) => Some(param.name.as_str()),
+                RefOr::Ref(_) => None,
+            })
+            .collect();
         assert!(names.contains(&"limit"), "limit not documented: {names:?}");
         assert!(
             names.contains(&"offset"),
