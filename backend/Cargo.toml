@@ -28,7 +28,7 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-http = { version = "0.7", features = ["trace"] }
-utoipa = { version = "5.5.0", features = ["uuid"] }
+utoipa = { version = "6.0.0", features = ["uuid"] }
 # Swagger UI. Under the old 1.83 MSRV, Cargo.lock held the `rust-embed`/
 # `-utils`/`-impl` trio at 8.11.0 (`sha2 ^0.10`) because 8.13's `sha2 0.11`
 # needs Rust 1.85+. With the pin now at 1.94 that hold is no longer required and
