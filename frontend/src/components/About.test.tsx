@@ -1,41 +1,47 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { About } from './About'
 
 describe('About', () => {
-  it('renders the blurb and the what-you-can-do steps', () => {
+  it('renders the blurb', () => {
     render(<About />)
 
     expect(
       screen.getByText(/real-time leaderboard service/i),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: /what you can do/i }),
+      screen.getByRole('heading', { name: /about this project/i }),
     ).toBeInTheDocument()
-
-    const steps = screen.getAllByRole('listitem')
-    expect(steps).toHaveLength(3)
-    expect(steps[2]).toHaveTextContent(
-      /page through the top of the board — or switch on live to auto-refresh it every 5 seconds/i,
-    )
   })
 
-  it('keeps each step in one element so it cannot split across flex items', () => {
+  it('expands and minimizes the panel from its title', async () => {
+    const user = userEvent.setup()
     render(<About />)
 
-    // The row is display:flex. If an inline <strong> were not wrapped in a
-    // single span it would become its own flex item, pushing the tail of the
-    // sentence onto a new, un-indented line. One child span prevents that.
-    for (const step of screen.getAllByRole('listitem')) {
-      expect(step.children).toHaveLength(1)
-      expect(step.firstElementChild?.tagName).toBe('SPAN')
-    }
+    const region = screen.getByRole('region', { name: /about this project/i })
+    const toggle = within(region).getByRole('button', {
+      name: /about this project/i,
+    })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('about-body')).toHaveAttribute('hidden')
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(document.getElementById('about-body')).not.toHaveAttribute('hidden')
   })
 
-  it('exposes the anchors the nav links scroll to', () => {
+  it('restores a minimized panel from localStorage', () => {
+    localStorage.setItem('panel:about:open', 'false')
+
     render(<About />)
 
-    expect(document.getElementById('about-heading')).not.toBeNull()
-    expect(document.getElementById('about-steps-heading')).not.toBeNull()
+    expect(
+      screen.getByRole('button', { name: /about this project/i }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    expect(document.getElementById('about-body')).toHaveAttribute('hidden')
   })
 })

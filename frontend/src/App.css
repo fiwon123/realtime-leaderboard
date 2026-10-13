@@ -11,54 +11,6 @@
   padding: var(--space-5) var(--space-4) 0;
 }
 
-.header-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-/*
- * Header/footer nav controls. Ghost pills, deliberately distinct from the
- * inline `.link-button` text links used inside panels. Class selectors beat the
- * global `button` element rules below, so these read as secondary controls.
- */
-.nav-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color var(--transition),
-    border-color var(--transition),
-    color var(--transition);
-}
-
-.nav-pill:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  border-color: var(--accent);
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.nav-pill:active:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
-  transform: none;
-}
-
-.nav-pill .nav-icon {
-  display: block;
-  flex: none;
-  opacity: 0.85;
-}
-
 .header-controls {
   display: flex;
   align-items: center;
@@ -651,22 +603,9 @@ tbody tr.changed:hover {
   background: none;
 }
 
-/* Footer nav controls: the same pills, quieter and smaller. */
-.app-footer .nav-pill {
-  padding: 0.2rem 0.6rem;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.app-footer .nav-pill:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* About band: full width at the top of the page, always visible. */
-.panel-about {
+/* About + How to bands: full width at the top of the page, above the panels. */
+.panel-about,
+.panel-howto {
   margin-bottom: var(--space-5);
 }
 
@@ -674,22 +613,14 @@ tbody tr.changed:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-3);
+  margin-top: 0;
 }
 
 .about-content p {
   margin: 0;
 }
 
-.about-subheading {
-  margin: 0;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
-.about-steps {
+.howto-steps {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -701,7 +632,7 @@ tbody tr.changed:hover {
   font-size: 0.85rem;
 }
 
-.about-steps li {
+.howto-steps li {
   display: flex;
   align-items: baseline;
   gap: 0.4rem;
@@ -713,11 +644,11 @@ tbody tr.changed:hover {
    counter badge and the text. Without this wrapper an inline <strong> becomes
    its own item and the text after it wraps flush to the left. min-width lets a
    long step wrap instead of overflowing the row. */
-.about-steps li > span {
+.howto-steps li > span {
   min-width: 0;
 }
 
-.about-steps li::before {
+.howto-steps li::before {
   content: counter(step);
   display: inline-flex;
   align-items: center;
@@ -837,4 +768,55 @@ tbody tr.changed:hover {
 .badge.bad {
   color: var(--error);
   border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+/*
+ * Collapsible panel (How to / About). The header title is a button styled as
+ * plain text; the body toggles with the `hidden` attribute. These rules sit at
+ * the end of the file so they win over the generic `button` element rules above
+ * without fighting specificity.
+ */
+button.panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.panel-toggle:hover:not(:disabled),
+button.panel-toggle:active:not(:disabled) {
+  background: none;
+  border-color: transparent;
+  color: var(--accent);
+  transform: none;
+}
+
+.panel-chevron {
+  display: block;
+  flex: none;
+  color: var(--text-muted);
+  transition: transform var(--transition);
+}
+
+button.panel-toggle:hover:not(:disabled) .panel-chevron {
+  color: var(--accent);
+}
+
+/* Closed: the chevron points right; open: down. */
+button.panel-toggle[aria-expanded="false"] .panel-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Spacing under the header; the `hidden` attribute hides the body itself. */
+.panel-body {
+  margin-top: var(--space-3);
 }
