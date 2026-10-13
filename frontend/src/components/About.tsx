@@ -1,66 +1,43 @@
-import { useState } from 'react'
-
-interface AboutProps {
-  /** Controlled visibility, owned by the parent so a nav link can reveal it. */
-  open?: boolean
-  /** Called when the toggle is used, so a controlled parent can update. */
-  onOpenChange?: (open: boolean) => void
-  showTutorialAgain?: () => void
-}
-
 /**
- * The About panel. Open by default so the project blurb is discoverable; when
- * `open` is provided the parent controls it (a header/footer link can reveal
- * and scroll to it).
+ * The About band. It sits at the top of the page, spans the full width, and is
+ * always visible: what the project is, followed by the steps a visitor can
+ * take. The steps double as the "How to" target, so there is one how-it-works
+ * list on the page rather than two.
  */
-export function About({ open, onOpenChange, showTutorialAgain }: AboutProps) {
-  const [internalOpen, setInternalOpen] = useState(true)
-  const shown = open ?? internalOpen
-
-  function toggle() {
-    const next = !shown
-    setInternalOpen(next)
-    onOpenChange?.(next)
-  }
-
+export function About() {
   return (
     <section className="panel panel-about" aria-labelledby="about-heading">
       <div className="section-header">
-        <h2 id="about-heading">About</h2>
-        <button
-          type="button"
-          className="toggle"
-          onClick={toggle}
-          aria-expanded={shown}
-        >
-          {shown ? 'Hide' : 'Learn more'}
-        </button>
+        <h2 id="about-heading">About this project</h2>
       </div>
-      {shown && (
-        <div className="about-content">
-          <p className="muted">
-            This is a real-time leaderboard service. Score events are submitted,
-            stored durably in PostgreSQL, and ranked live in Redis.
-          </p>
-          <ol className="tutorial-steps">
-            <li>Submit a score event for a player.</li>
-            <li>Look up any player&apos;s live rank.</li>
-            <li>
+      <div className="about-content">
+        <p>
+          A real-time leaderboard service. Score events are submitted, stored
+          durably in PostgreSQL, and ranked live in Redis sorted sets — so
+          rankings stay low-latency as the board grows.
+        </p>
+        <h3 id="about-steps-heading" className="about-subheading">
+          What you can do
+        </h3>
+        {/* Each step wraps its text in a single span so the flex row has
+            exactly two items — the counter badge and the text. Otherwise an
+            inline <strong> becomes its own flex item and the sentence after it
+            wraps to a new line flush against the left edge. */}
+        <ol className="about-steps">
+          <li>
+            <span>Submit a score event for a player.</span>
+          </li>
+          <li>
+            <span>Look up any player&apos;s live rank.</span>
+          </li>
+          <li>
+            <span>
               Page through the top of the board — or switch on{' '}
               <strong>Live</strong> to auto-refresh it every 5 seconds.
-            </li>
-          </ol>
-          {showTutorialAgain !== undefined && (
-            <button
-              type="button"
-              className="tutorial-dismiss"
-              onClick={showTutorialAgain}
-            >
-              Show tutorial again
-            </button>
-          )}
-        </div>
-      )}
+            </span>
+          </li>
+        </ol>
+      </div>
     </section>
   )
 }

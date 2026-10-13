@@ -9,16 +9,55 @@ import { RankLookup } from './components/RankLookup'
 import { ScoreForm } from './components/ScoreForm'
 import { StatsPanel } from './components/StatsPanel'
 import { ThemeToggle } from './components/ThemeToggle'
-import { Tutorial } from './components/Tutorial'
-import {
-  isTutorialDismissed,
-  resetTutorialDismissal,
-} from './lib/tutorial'
 import { getHealth } from './api/client'
 import type { HealthResponse } from './api/types'
 import { offsetForRank, pagingUrl, parsePaging } from './lib/paging'
 import type { PageSize, Paging } from './lib/paging'
 import './App.css'
+
+/** Small book glyph marking the "How to" nav control. */
+function HowToIcon() {
+  return (
+    <svg
+      className="nav-icon"
+      viewBox="0 0 24 24"
+      width={16}
+      height={16}
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 4.5h6.5a3.5 3.5 0 0 1 3.5 3.5v11a2.5 2.5 0 0 0-2.5-2.5H2z" />
+      <path d="M22 4.5h-6.5A3.5 3.5 0 0 0 12 8v11a2.5 2.5 0 0 1 2.5-2.5H22z" />
+    </svg>
+  )
+}
+
+/** Small info glyph marking the "About" nav control. */
+function AboutIcon() {
+  return (
+    <svg
+      className="nav-icon"
+      viewBox="0 0 24 24"
+      width={16}
+      height={16}
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 7.75h.01" />
+    </svg>
+  )
+}
 
 function HealthBadge({ health }: { health: HealthResponse | null }) {
   const ok = health?.status === 'ok'
@@ -43,12 +82,6 @@ function HealthBadge({ health }: { health: HealthResponse | null }) {
 export default function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [health, setHealth] = useState<HealthResponse | null>(null)
-  // Controlled by App so a nav link can reveal the tutorial again; seeded from
-  // the persisted dismissal so a reload after "Got it" stays hidden.
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDismissed())
-  // About opens on load so the blurb is discoverable, and a nav link can reveal
-  // it again after the user collapses it.
-  const [aboutOpen, setAboutOpen] = useState(true)
   // Leaderboard paging lives here so the URL can reflect it and RankLookup can
   // drive it. It is seeded from (and kept in) the query string.
   const [paging, setPaging] = useState<Paging>(() =>
@@ -104,20 +137,17 @@ export default function App() {
     commitPaging({ ...paging, offset: offsetForRank(rank, paging.limit) })
   }
 
-  // Reveal the tutorial from a nav link: clear the persisted dismissal so it
-  // stays up, then scroll it into view.
-  function revealTutorial() {
-    resetTutorialDismissal()
-    setShowTutorial(true)
-    const heading = document.getElementById('tutorial-heading')
+  // Scroll the shared how-to steps into view from a nav link.
+  function scrollToHowTo() {
+    const heading = document.getElementById('about-steps-heading')
     if (typeof heading?.scrollIntoView === 'function') {
       heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
-  // Reveal the About panel from a nav link and scroll it into view.
-  function revealAbout() {
-    setAboutOpen(true)
+  // Scroll the About band into view from a nav link. It is always visible, so
+  // there is nothing to reveal.
+  function scrollToAbout() {
     const heading = document.getElementById('about-heading')
     if (typeof heading?.scrollIntoView === 'function') {
       heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -131,10 +161,12 @@ export default function App() {
           <Logo />
         </h1>
         <nav className="header-nav" aria-label="Main">
-          <button type="button" className="link-button" onClick={revealTutorial}>
+          <button type="button" className="nav-pill" onClick={scrollToHowTo}>
+            <HowToIcon />
             How to
           </button>
-          <button type="button" className="link-button" onClick={revealAbout}>
+          <button type="button" className="nav-pill" onClick={scrollToAbout}>
+            <AboutIcon />
             About
           </button>
         </nav>
@@ -148,10 +180,7 @@ export default function App() {
         <p className="tagline">
           Submit score events and read the live ranking.
         </p>
-        <Tutorial
-          visible={showTutorial}
-          onDismissed={() => setShowTutorial(false)}
-        />
+        <About />
         <div className="panels">
           <ScoreForm onSubmitted={bump} />
           <RankLookup onJumpToRank={jumpToRank} />
@@ -163,11 +192,8 @@ export default function App() {
             onLimitChange={changeLimit}
           />
           <StatsPanel />
-          <About
-            open={aboutOpen}
-            onOpenChange={setAboutOpen}
-            showTutorialAgain={revealTutorial}
-          />
+        </div>
+        <div className="panels-secondary">
           <DemoSeeder onSeeded={bump} />
           <AdminPanel onChanged={bump} />
         </div>
@@ -176,10 +202,12 @@ export default function App() {
         <LogoMark className="footer-mark" />
         <span className="footer-note">Live rankings for every score</span>
         <nav className="footer-links" aria-label="Project links">
-          <button type="button" className="link-button" onClick={revealTutorial}>
+          <button type="button" className="nav-pill" onClick={scrollToHowTo}>
+            <HowToIcon />
             How to
           </button>
-          <button type="button" className="link-button" onClick={revealAbout}>
+          <button type="button" className="nav-pill" onClick={scrollToAbout}>
+            <AboutIcon />
             About
           </button>
           <a href="/swagger-ui/">API docs</a>

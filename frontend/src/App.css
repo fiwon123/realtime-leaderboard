@@ -17,6 +17,48 @@
   gap: var(--space-2);
 }
 
+/*
+ * Header/footer nav controls. Ghost pills, deliberately distinct from the
+ * inline `.link-button` text links used inside panels. Class selectors beat the
+ * global `button` element rules below, so these read as secondary controls.
+ */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.nav-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav-pill:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  transform: none;
+}
+
+.nav-pill .nav-icon {
+  display: block;
+  flex: none;
+  opacity: 0.85;
+}
+
 .header-controls {
   display: flex;
   align-items: center;
@@ -119,10 +161,7 @@ main {
     grid-template-areas:
       "board score"
       "board rank"
-      "board stats"
-      "board seeder"
-      "board about"
-      "board admin";
+      "board stats";
   }
 
   .panel-board {
@@ -137,14 +176,21 @@ main {
   .panel-stats {
     grid-area: stats;
   }
-  .panel-seeder {
-    grid-area: seeder;
-  }
-  .panel-about {
-    grid-area: about;
-  }
-  .panel-admin {
-    grid-area: admin;
+}
+
+/* Demo data and admin tools are a different kind of information from the live
+   board, so they sit below it as a horizontal pair on wide screens and stack in
+   DOM order below the breakpoint. */
+.panels-secondary {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: var(--space-5);
+}
+
+@media (min-width: 60rem) {
+  .panels-secondary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
@@ -452,10 +498,24 @@ tbody tr:last-child td {
   background: linear-gradient(135deg, #f0c098, #b45309);
 }
 
+/* Rank cell: the number/medal stays centered while the ▲/▼ is pinned to the
+   right edge, so an appearing arrow never shifts the number off-center. */
+.rank-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0 var(--space-3);
+}
+
 /* Rank movement after a refresh moved a player (glyph is decorative; the
    .sr-only text carries the direction). */
 .movement {
-  margin-left: var(--space-1);
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -487,6 +547,31 @@ tbody tr.leader {
 
 tbody tr.leader:hover {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* A row whose value changed on the last load is highlighted; the ▲/▼ above
+   carries the direction when the rank moved too. Declared after `.leader` so a
+   highlighted leader keeps the stronger highlight. */
+tbody tr.changed {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+  animation: row-spotlight 700ms ease-out;
+}
+
+tbody tr.changed:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@keyframes row-spotlight {
+  from {
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tbody tr.changed {
+    animation: none;
+  }
 }
 
 /* Leaderboard empty state. */
@@ -550,23 +635,41 @@ tbody tr.leader:hover {
 
 .footer-links {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   margin-left: auto;
 }
 
-.app-footer a,
-.app-footer .link-button {
+.app-footer a {
   color: var(--accent);
   text-decoration: none;
 }
 
-.app-footer a:hover,
-.app-footer .link-button:hover {
+.app-footer a:hover {
   text-decoration: underline;
   background: none;
 }
 
-/* About panel */
+/* Footer nav controls: the same pills, quieter and smaller. */
+.app-footer .nav-pill {
+  padding: 0.2rem 0.6rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.app-footer .nav-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* About band: full width at the top of the page, always visible. */
+.panel-about {
+  margin-bottom: var(--space-5);
+}
+
 .about-content {
   display: flex;
   flex-direction: column;
@@ -576,6 +679,57 @@ tbody tr.leader:hover {
 
 .about-content p {
   margin: 0;
+}
+
+.about-subheading {
+  margin: 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.about-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.about-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  counter-increment: step;
+  max-width: 44rem;
+}
+
+/* The step text is a single flex item, so the row has exactly two items: the
+   counter badge and the text. Without this wrapper an inline <strong> becomes
+   its own item and the text after it wraps flush to the left. min-width lets a
+   long step wrap instead of overflowing the row. */
+.about-steps li > span {
+  min-width: 0;
+}
+
+.about-steps li::before {
+  content: counter(step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 /* Leaderboard paging */
@@ -683,68 +837,4 @@ tbody tr.leader:hover {
 .badge.bad {
   color: var(--error);
   border-color: color-mix(in srgb, var(--error) 40%, transparent);
-}
-
-/* Tutorial: a compact strip with the steps stacked vertically. */
-.tutorial {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-4);
-}
-
-.tutorial-title {
-  margin: 0;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
-.tutorial-steps {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.tutorial-steps li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  counter-increment: step;
-  max-width: 44rem;
-}
-
-.tutorial-steps li::before {
-  content: counter(step);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.tutorial-dismiss {
-  margin-left: auto;
-}
-
-/* In the About panel this same button starts a column, so it must not stretch
-   or get pushed to the far right. */
-.about-content .tutorial-dismiss {
-  align-self: flex-start;
-  margin-left: 0;
 }

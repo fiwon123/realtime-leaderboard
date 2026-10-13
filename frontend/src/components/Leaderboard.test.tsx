@@ -273,4 +273,124 @@ describe('Leaderboard', () => {
 
     expect(container.querySelectorAll('.movement')).toHaveLength(0)
   })
+
+  it('highlights a row whose score changed even when the rank did not move', async () => {
+    let load = 0
+    server.use(
+      http.get('/leaderboard', () => {
+        load += 1
+        const entries =
+          load === 1
+            ? [{ rank: 1, player_id: 'alice', score: 900 }]
+            : [{ rank: 1, player_id: 'alice', score: 1000 }]
+        return HttpResponse.json({ entries, total: 1 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('tr.changed')).toHaveLength(1)
+    })
+    expect(container.querySelector('tr.changed')).toHaveTextContent('alice')
+    // The rank did not move, so no arrow is shown.
+    expect(container.querySelectorAll('.movement')).toHaveLength(0)
+  })
+
+  it('highlights a player that newly appears on the page', async () => {
+    let load = 0
+    server.use(
+      http.get('/leaderboard', () => {
+        load += 1
+        const entries =
+          load === 1
+            ? [{ rank: 1, player_id: 'alice', score: 900 }]
+            : [
+                { rank: 1, player_id: 'alice', score: 900 },
+                { rank: 2, player_id: 'bob', score: 700 },
+              ]
+        return HttpResponse.json({ entries, total: 2 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+    await screen.findByText('bob')
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('tr.changed')).toHaveLength(1)
+    })
+    expect(container.querySelector('tr.changed')).toHaveTextContent('bob')
+  })
+
+  it('clears the highlight once a load reports no change', async () => {
+    let load = 0
+    server.use(
+      http.get('/leaderboard', () => {
+        load += 1
+        const score = load === 1 ? 900 : 1000
+        return HttpResponse.json({
+          entries: [{ rank: 1, player_id: 'alice', score }],
+          total: 1,
+        })
+      }),
+    )
+
+    const user = userEvent.setup()
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+    await waitFor(() => {
+      expect(container.querySelectorAll('tr.changed')).toHaveLength(1)
+    })
+
+    // Third load: same score as the second, so nothing changed.
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+    await waitFor(() => {
+      expect(container.querySelectorAll('tr.changed')).toHaveLength(0)
+    })
+  })
+
+  it('pins the movement arrow inside the rank cell', async () => {
+    let load = 0
+    server.use(
+      http.get('/leaderboard', () => {
+        load += 1
+        const entries =
+          load === 1
+            ? [
+                { rank: 1, player_id: 'alice', score: 900 },
+                { rank: 2, player_id: 'bob', score: 700 },
+              ]
+            : [
+                { rank: 1, player_id: 'bob', score: 700 },
+                { rank: 2, player_id: 'alice', score: 900 },
+              ]
+        return HttpResponse.json({ entries, total: 2 })
+      }),
+    )
+
+    const user = userEvent.setup()
+    const { container } = render(<Leaderboard />)
+    await screen.findByText('alice')
+
+    await user.click(screen.getByRole('button', { name: /^refresh$/i }))
+    await screen.findByText('up 1')
+
+    const rankCell = container.querySelector('.rank-cell')
+    expect(rankCell).not.toBeNull()
+    // The number and the arrow share the rank cell, so the arrow never shifts
+    // the centered number into a neighbouring column.
+    expect(rankCell?.querySelector('.movement')).not.toBeNull()
+    expect(rankCell?.textContent).toContain('1')
+    expect(rankCell?.parentElement?.tagName).toBe('TD')
+  })
 })
