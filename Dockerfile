@@ -2,7 +2,7 @@
 
 # Dev sandbox image for realtime-leaderboard (Rust backend).
 
-FROM rust:1.83-bookworm
+FROM rust:1.94-bookworm
 
 # Build-time ARGs are declared here, AFTER the first FROM. An ARG declared
 # before FROM is in scope only for the FROM lines themselves — every
