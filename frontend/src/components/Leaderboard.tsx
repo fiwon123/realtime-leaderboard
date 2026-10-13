@@ -365,7 +365,7 @@ export function Leaderboard({
             onClick={() => goTo(Math.max(0, offset - limit))}
             disabled={!hasPrev || loading}
           >
-            Newer
+            Previous
           </button>
           <span className="pager-status" role="status">
             {firstShown}–{lastShown} of {total}
@@ -375,7 +375,7 @@ export function Leaderboard({
             onClick={() => goTo(offset + limit)}
             disabled={!hasNext || loading}
           >
-            Older
+            Next
           </button>
         </div>
       )}

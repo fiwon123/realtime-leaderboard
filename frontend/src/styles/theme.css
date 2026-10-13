@@ -3,16 +3,17 @@
  *
  * Dark is the default. Light applies when <html> carries `data-theme="light"`,
  * which the inline bootstrap in index.html sets from the user's saved choice
- * before first paint, so there is no flash of the wrong theme. Panels stay dark
- * in both modes — see the `section` block below. Component styles compose from
- * these tokens.
+ * before first paint, so there is no flash of the wrong theme. Both themes are
+ * fully themed — panels take the surface/text/accent of the active theme.
+ * Component styles compose from these tokens.
  */
 
 :root {
   color-scheme: light;
 
-  /* Surfaces + text. The page is white in light mode; panels override the
-     surfaces back to dark (in the `section` block below). */
+  /* Surfaces + text (light values). The dark theme overrides the whole set in
+     the `[data-theme="dark"]` block below; panels follow whichever theme is
+     active. */
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #eceff6;
@@ -37,8 +38,8 @@
   --accent-swatch-cyan: #0e7490;
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgb(16 19 30 / 6%), 0 1px 3px rgb(16 19 30 / 8%);
-  --shadow-md: 0 6px 18px rgb(16 19 30 / 10%);
+  --shadow-sm: 0 1px 2px rgb(16 19 30 / 6%), 0 4px 14px rgb(16 19 30 / 8%);
+  --shadow-md: 0 8px 24px rgb(16 19 30 / 12%);
 
   /* Radii */
   --radius-sm: 0.35rem;
@@ -89,68 +90,6 @@
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --shadow-md: 0 8px 24px rgb(0 0 0 / 50%);
-}
-
-/*
- * Panels are always dark. Light mode changes only the page background: these
- * section-scoped overrides pin the dark surface/text/status palette (plus a
- * dark `color-scheme`, so native controls inside panels — scrollbars, the
- * page-size <select>) no matter which theme is active. In dark mode they
- * re-declare the same values, which is a no-op, so page and panels simply share
- * the dark look.
- */
-section {
-  color-scheme: dark;
-
-  --surface: #161b24;
-  --surface-2: #1f2632;
-  --text: #e8ebf1;
-  --text-muted: #9aa3b4;
-  --border: #2b3444;
-  --success: #4ade80;
-  --error: #f87171;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-  --shadow-md: 0 8px 24px rgb(0 0 0 / 50%);
-
-  /* The accent family is scoped too: panels are dark in every theme, and the
-     light-scheme accent (indigo #4f46e5) only reaches ~2.7:1 on a dark
-     surface. These are the dark-scheme values (same as the dark defaults for
-     indigo/the presets below), so accent links and buttons stay legible. */
-  --accent: #818cf8;
-  --accent-hover: #a5b4fc;
-  --accent-active: #c7d2fe;
-  --accent-contrast: #0c0f16;
-  --focus-ring: #a5b4fc;
-}
-
-/* Panel accents for the non-default presets, keyed off data-accent (not the
-   theme) so a picked accent looks the same inside a panel in either mode. */
-[data-accent="amber"] section {
-  --accent: #fbbf24;
-  --accent-hover: #fcd34d;
-  --accent-active: #fde68a;
-  --focus-ring: #fbbf24;
-}
-
-[data-accent="emerald"] section {
-  --accent: #34d399;
-  --accent-hover: #6ee7b7;
-  --accent-active: #a7f3d0;
-  --focus-ring: #34d399;
-}
-
-[data-accent="rose"] section {
-  --accent: #fb7185;
-  --accent-hover: #fda4af;
-  --accent-active: #fecdd3;
-  --focus-ring: #fb7185;
-}
-
-[data-accent="cyan"] section {
-  --accent: #22d3ee;
-  --accent-hover: #67e8f9;
-  --accent-active: #a5f3fc;
-  --focus-ring: #22d3ee;
 }
 
 /*

@@ -104,7 +104,7 @@ describe('App', () => {
     render(<App />)
     await screen.findByText('alice')
 
-    await user.click(screen.getByRole('button', { name: /older/i }))
+    await user.click(screen.getByRole('button', { name: /next/i }))
     await screen.findByText('zed')
 
     expect(window.location.search).toBe('?offset=10')
