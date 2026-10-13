@@ -151,44 +151,41 @@ describe('App', () => {
     expect(await screen.findByText(/healthy/i)).toBeInTheDocument()
   })
 
-  it('re-shows the tutorial from the How to link', async () => {
+  it('targets the how-to steps from the How to link', async () => {
     const user = userEvent.setup()
     render(<App />)
 
+    // The steps live in the always-visible About band at the top of the page.
     expect(
-      screen.getByRole('heading', { name: /how it works/i }),
+      screen.getByRole('heading', { name: /what you can do/i }),
     ).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /got it/i }))
-    expect(
-      screen.queryByRole('heading', { name: /how it works/i }),
-    ).not.toBeInTheDocument()
+    // Two "How to" links exist (header + footer); either scrolls to the steps.
+    const howTo = screen.getAllByRole('button', { name: /how to/i })
+    expect(howTo).toHaveLength(2)
 
-    // Two "How to" links exist (header + footer); either re-shows it.
-    await user.click(screen.getAllByRole('button', { name: /how to/i })[0])
-    expect(
-      await screen.findByRole('heading', { name: /how it works/i }),
-    ).toBeInTheDocument()
+    await user.click(howTo[0])
+    expect(document.getElementById('about-steps-heading')).not.toBeNull()
   })
 
-  it('reveals About from the About link', async () => {
+  it('keeps About visible and scrolls to it from the About link', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-    // Open by default so the blurb is discoverable.
+    // Always visible — there is no Hide/Learn more toggle anymore.
+    const aboutRegion = screen.getByRole('region', {
+      name: /about this project/i,
+    })
     expect(
-      screen.getByText(/real-time leaderboard service/i),
+      within(aboutRegion).getByText(/real-time leaderboard service/i),
     ).toBeInTheDocument()
+    expect(within(aboutRegion).queryByRole('button')).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /hide/i }))
-    expect(
-      screen.queryByText(/real-time leaderboard service/i),
-    ).not.toBeInTheDocument()
+    // Two "About" links exist (header + footer); either scrolls to it.
+    const about = screen.getAllByRole('button', { name: /^about$/i })
+    expect(about).toHaveLength(2)
 
-    // Two "About" links exist (header + footer); either re-reveals it.
-    await user.click(screen.getAllByRole('button', { name: /^about$/i })[0])
-    expect(
-      screen.getByText(/real-time leaderboard service/i),
-    ).toBeInTheDocument()
+    await user.click(about[0])
+    expect(document.getElementById('about-heading')).not.toBeNull()
   })
 })

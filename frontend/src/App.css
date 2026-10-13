@@ -161,9 +161,7 @@ main {
     grid-template-areas:
       "board score"
       "board rank"
-      "board stats"
-      "board seeder"
-      "board admin";
+      "board stats";
   }
 
   .panel-board {
@@ -178,11 +176,21 @@ main {
   .panel-stats {
     grid-area: stats;
   }
-  .panel-seeder {
-    grid-area: seeder;
-  }
-  .panel-admin {
-    grid-area: admin;
+}
+
+/* Demo data and admin tools are a different kind of information from the live
+   board, so they sit below it as a horizontal pair on wide screens and stack in
+   DOM order below the breakpoint. */
+.panels-secondary {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: var(--space-5);
+}
+
+@media (min-width: 60rem) {
+  .panels-secondary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
@@ -657,29 +665,16 @@ tbody tr.changed:hover {
   color: var(--accent);
 }
 
-/* About band: full width below the panels, two columns on wide screens. */
+/* About band: full width at the top of the page, always visible. */
 .panel-about {
-  margin-top: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 
 .about-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4) var(--space-5);
-  margin-top: var(--space-3);
-}
-
-@media (min-width: 48rem) {
-  .about-content {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    align-items: start;
-  }
-}
-
-.about-column {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .about-content p {
@@ -694,32 +689,47 @@ tbody tr.changed:hover {
   color: var(--text-muted);
 }
 
-.about-stack {
+.about-steps {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.about-stack li {
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  counter-reset: step;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-.about-actions {
+.about-steps li {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
+  align-items: baseline;
+  gap: 0.4rem;
+  counter-increment: step;
+  max-width: 44rem;
 }
 
-.about-link {
-  font-weight: 600;
+/* The step text is a single flex item, so the row has exactly two items: the
+   counter badge and the text. Without this wrapper an inline <strong> becomes
+   its own item and the text after it wraps flush to the left. min-width lets a
+   long step wrap instead of overflowing the row. */
+.about-steps li > span {
+  min-width: 0;
+}
+
+.about-steps li::before {
+  content: counter(step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 /* Leaderboard paging */
@@ -827,61 +837,4 @@ tbody tr.changed:hover {
 .badge.bad {
   color: var(--error);
   border-color: color-mix(in srgb, var(--error) 40%, transparent);
-}
-
-/* Tutorial: a compact strip with the steps stacked vertically. */
-.tutorial {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--space-2) var(--space-4);
-  margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-4);
-}
-
-.tutorial-title {
-  margin: 0;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
-.tutorial-steps {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.tutorial-steps li {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  counter-increment: step;
-  max-width: 44rem;
-}
-
-.tutorial-steps li::before {
-  content: counter(step);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.tutorial-dismiss {
-  margin-left: auto;
 }
