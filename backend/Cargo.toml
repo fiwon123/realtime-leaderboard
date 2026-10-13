@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.94"
 description = "Real-time leaderboard API backed by PostgreSQL and Redis"
-license = "MIT"
+# Portfolio project: all rights reserved (see the repository LICENSE). A custom
+# SPDX LicenseRef keeps the crate metadata honest without claiming an open-source
+# license it is not released under.
+license = "LicenseRef-AllRightsReserved"
 # The crate ships three binaries (`openapi`, `rebuild`, and this API), so a bare
 # `cargo run` has no unambiguous target. Naming the API here keeps the documented
 # `cargo run` (AGENTS.md, the dev-sandbox entrypoint) working without `--bin`.
