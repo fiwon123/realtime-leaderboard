@@ -202,11 +202,25 @@ cargo run --bin rebuild     # reads DATABASE_URL and REDIS_URL
 
 ## Development
 
+### OS matrix (dev sandbox)
+
+Base compose runs standalone on any OS. Host mounts (gh/opencode/gitconfig) merge only when a Linux ELF opencode binary exists. Native Windows uses the Python launcher.
+
+| Platform | Start | In-container opencode | Notes |
+|---|---|---|---|
+| Linux | `make dev-up` | Yes | Full support |
+| macOS | `make dev-up` | Host only (Mach-O can't run in Linux) | OK |
+| WSL2 | `make dev-up` | Yes (inside distro) | Full support |
+| Windows (native) | `python scripts/dev-up.py dev-up` or `.\scripts\dev-up.ps1 dev-up` | Host only | See Troubleshooting; CRLF guarded |
+
+`dev-up` does **not** require opencode; only `make opencode` / `make shell` require a Linux ELF binary. Use `.\scripts\dev-up.ps1` on native Windows if `make` is unavailable.
+
 ```bash
 make check          # backend (fmt + clippy + test + build) and frontend (lint + typecheck + test + build)
 make dev-up         # start Postgres, Redis, the API, and the frontend
 make shell          # shell inside the sandbox
 ```
+
 
 Per component:
 
