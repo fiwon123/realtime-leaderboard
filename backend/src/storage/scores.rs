@@ -26,21 +26,21 @@ pub async fn insert_event<'e, E>(
 where
     E: PgExecutor<'e>,
 {
-    let row = sqlx::query!(
+    let row: Option<sqlx::postgres::PgRow> = sqlx::query(
         r#"
         INSERT INTO score_events (event_id, player_id, score)
         VALUES ($1, $2, $3)
         ON CONFLICT (event_id) DO NOTHING
         RETURNING seq
         "#,
-        event_id,
-        player_id,
-        score,
     )
+    .bind(event_id)
+    .bind(player_id)
+    .bind(score)
     .fetch_optional(executor)
     .await?;
 
-    Ok(row.map(|row| row.seq))
+    Ok(row.map(|row| sqlx::Row::get::<i64, _>(&row, "seq")))
 }
 
 /// Materialize a new best for a player when `(score, seq)` strictly improves on
@@ -57,7 +57,7 @@ pub async fn upsert_player_best<'e, E>(
 where
     E: PgExecutor<'e>,
 {
-    let result = sqlx::query!(
+    let result = sqlx::query(
         r#"
         INSERT INTO player_scores (player_id, best_score, best_seq)
         VALUES ($1, $2, $3)
@@ -69,10 +69,10 @@ where
                OR (EXCLUDED.best_score = player_scores.best_score
                    AND EXCLUDED.best_seq < player_scores.best_seq)
         "#,
-        player_id,
-        score,
-        seq,
     )
+    .bind(player_id)
+    .bind(score)
+    .bind(seq)
     .execute(executor)
     .await?;
 
@@ -84,23 +84,21 @@ pub async fn player_best<'e, E>(executor: E, player_id: &str) -> sqlx::Result<Op
 where
     E: PgExecutor<'e>,
 {
-    sqlx::query_as!(
-        PlayerBest,
+    sqlx::query_as::<_, PlayerBest>(
         r#"
         SELECT player_id, best_score, best_seq
         FROM player_scores
         WHERE player_id = $1
         "#,
-        player_id,
     )
+    .bind(player_id)
     .fetch_optional(executor)
     .await
 }
 
 /// Fetch every materialized standing, used to rebuild the Redis sorted set.
 pub async fn all_player_bests(pool: &PgPool) -> sqlx::Result<Vec<PlayerBest>> {
-    sqlx::query_as!(
-        PlayerBest,
+    sqlx::query_as::<_, PlayerBest>(
         r#"
         SELECT player_id, best_score, best_seq
         FROM player_scores
