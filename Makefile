@@ -2,7 +2,7 @@
 
 COMPONENTS := backend frontend
 
-.PHONY: help check clean dev-up dev-down dev-restart dev-frontend dev-frontend-log dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
+.PHONY: help check clean dev-up dev-down dev-restart dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
 
 # Extra flags for the opencode invocation. `make opencode-auto` /
 # `make dev-opencode-auto` set this to --auto, which auto-approves permissions
@@ -40,7 +40,7 @@ require-agent:
 dev-up: preflight
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; HOST_UID=$$(id -u 2>/dev/null || echo 1000) HOST_GID=$$(id -g 2>/dev/null || echo 1000) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) docker compose $$COMPOSE up -d --build
 	@$(MAKE) dev-frontend
-dev-down: dev-frontend-stop
+dev-down:
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE down
 dev-shell: preflight
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE exec dev bash || docker compose $$COMPOSE run --rm dev bash
