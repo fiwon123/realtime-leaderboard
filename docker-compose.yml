@@ -13,7 +13,7 @@ services:
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: ["./scripts/dev-entrypoint.sh"]
+    command: ["/bin/bash", "./scripts/dev-entrypoint.sh"]
     ports:
       # Host port only; the container port is fixed. The host side is overridable
       # per project via HOST_PORT so two dev sandboxes can run at once — two
@@ -41,10 +41,6 @@ services:
       - HOME=/home/devuser
     volumes:
       - .:/workspace:cached
-      - ${HOST_HOME:-${HOME}}/.config/gh:/home/devuser/.config/gh:ro
-      - ${HOST_HOME:-${HOME}}/.opencode/bin/opencode:/usr/local/bin/opencode:ro
-      - ${HOST_HOME:-${HOME}}/.config/opencode:/home/devuser/.config/opencode:ro
-      - ${HOST_HOME:-${HOME}}/.gitconfig:/home/devuser/.gitconfig:ro
     depends_on:
       db:
         condition: service_healthy
