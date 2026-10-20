@@ -4,9 +4,6 @@ COMPONENTS := backend frontend
 
 .PHONY: help check clean dev-up dev-down dev-restart dev-shell dev-opencode dev-opencode-auto dev-log dev-build reset preflight
 
-# Extra flags for the opencode invocation. `make opencode-auto` /
-# `make dev-opencode-auto` set this to --auto, which auto-approves permissions
-# that are not explicitly denied; the secret-file deny rules still apply.
 OPENCODE_ARGS ?=
 
 help:
@@ -39,15 +36,27 @@ require-agent:
 
 dev-up: preflight
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; HOST_UID=$$(id -u 2>/dev/null || echo 1000) HOST_GID=$$(id -g 2>/dev/null || echo 1000) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) docker compose $$COMPOSE up -d --build
-	@$(MAKE) dev-frontend
+	@docker exec -d realtime-leaderboard-dev-1 sh -c "cd /workspace/frontend && npm run dev -- --host 0.0.0.0 --port 5173" 2>/dev/null || true
+
 dev-down:
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE down
+
+dev-restart: dev-down dev-up
+
 dev-shell: preflight
 	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE exec dev bash || docker compose $$COMPOSE run --rm dev bash
+
 dev-opencode: preflight require-agent
 	@COMPOSE="-f docker-compose.yml -f docker-compose.agent.yml"; HOST_UID=$$(id -u) HOST_GID=$$(id -g) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null); if [ -z "$$(docker compose $$COMPOSE ps -q dev 2>/dev/null)" ]; then echo "[opencode] starting dev stack..."; docker compose $$COMPOSE up -d dev; fi; docker compose $$COMPOSE exec -it dev bash -lc "cd /workspace && opencode $(OPENCODE_ARGS)" || docker compose $$COMPOSE exec -it dev zsh -lc "cd /workspace && opencode $(OPENCODE_ARGS)"
 
-# Same recipe, with --auto: auto-approve permissions that are not explicitly
-# denied (every secret-file deny rule still applies).
 dev-opencode-auto: OPENCODE_ARGS = --auto
 dev-opencode-auto: dev-opencode
+
+dev-log:
+	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE logs -f dev
+
+dev-build: preflight
+	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE build
+
+reset: ## Stop all stacks and remove volumes
+	@docker compose down -v 2>/dev/null || true
