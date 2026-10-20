@@ -35,75 +35,15 @@ preflight:
 	@scripts/resolve-gh-token.sh --check >/dev/null 2>&1 || true
 
 require-agent:
-	@test "$$(head -c4 "$(HOME)/.opencode/bin/opencode" 2>/dev/null | od -An -tx1 | tr -d ' 
-')" = "7f454c46" || { echo "ERROR: Linux ELF opencode required" >&2; exit 1; }
+	@test -r "$${HOME}/.opencode/bin/opencode" || { echo "ERROR: opencode not found" >&2; exit 1; }; hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) :;; *) echo "ERROR: Linux ELF opencode required" >&2; exit 1;; esac
 
 dev-up: preflight
-	@COMPOSE="-f docker-compose.yml"; if [ "$$(head -c4 "$(HOME)/.opencode/bin/opencode" 2>/dev/null | od -An -tx1 | tr -d ' 
-')" = "7f454c46" ]; then COMPOSE="$$COMPOSE -f docker-compose.agent.yml"; fi; HOST_UID=$$(id -u) HOST_GID=$$(id -g) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) docker compose $$COMPOSE up -d --build
+	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; HOST_UID=$$(id -u 2>/dev/null || echo 1000) HOST_GID=$$(id -g 2>/dev/null || echo 1000) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null || echo) docker compose $$COMPOSE up -d --build
 	@$(MAKE) dev-frontend
-
-# Start the frontend dev server inside the running `dev` container. Vite binds
-# 0.0.0.0:5173 (host:true) and the compose file publishes that port, so it is
-# reachable at http://localhost:5173 (Vite falls back to the next free port if
-# 5173 is held by something else). The API is in the same container on :8080,
-# Vite's default proxy target. Waits for the container, refreshes dependencies
-# when the lockfile is newer than the installed snapshot (or when the vite
-# binary is missing), restarts any previous instance, starts Vite detached, then
-# waits for it to report ready — failing loudly otherwise. Logs: /tmp/vite.log.
-#
-# The restart step matches the running Vite by argv (`node …/node_modules/.bin/vite`).
-# `pkill -f` also matches the shell running it, so the pattern is anchored on the
-# path separator (`/node_modules/[.]bin/vite`): the recipe's own command line has
-# no `/node_modules/` before the `-x node_modules/.bin/vite` test, so it cannot
-# self-match, while the target process still does. (The old `vite/bin/vite`
-# matched neither the real process nor — worse — killed the shell itself: exit 143.)
-dev-frontend: preflight
-	@i=0; while [ $$i -lt 30 ]; do docker compose exec -T dev true >/dev/null 2>&1 && break; sleep 1; i=$$((i+1)); done
-	@docker compose exec -T dev true >/dev/null 2>&1 || { echo "dev container is not running; run 'make dev-up' first" >&2; exit 1; }
-	@docker compose exec -T dev bash -lc 'pkill -f "/node_modules/[.]bin/vite" 2>/dev/null || true; cd /workspace/frontend && { [ -x node_modules/.bin/vite ] && [ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund; } && : > /tmp/vite.log'
-	@docker compose exec -T -d dev bash -lc 'cd /workspace/frontend && exec npm run dev >/tmp/vite.log 2>&1'
-	@i=0; while [ $$i -lt 30 ]; do \
-	  if docker compose exec -T dev grep -q "ready in" /tmp/vite.log 2>/dev/null; then \
-	    echo "frontend ready on http://localhost:$${WEB_HOST_PORT:-5173} (logs: make dev-frontend-log)"; exit 0; \
-	  fi; \
-	  sleep 1; i=$$((i+1)); \
-	done; \
-	echo "frontend did not report ready within 30s; run 'make dev-frontend-log' to see why" >&2; exit 1
-
-dev-frontend-log:
-	@docker compose exec dev tail -f /tmp/vite.log
-
-dev-down:
-	@docker compose down
-
-# The `dev` container runs `cargo run` once at start, and Vite is a detached
-# process inside it. `docker compose up -d` will not recreate an unchanged
-# container, so a code change (e.g. a new backend route like /stats) is not
-# picked up until both are restarted. This does exactly that: restart the
-# container (re-runs the entrypoint) and relaunch Vite.
-dev-restart: ## Restart the dev API container and the Vite dev server
-	@docker compose restart dev
-	@$(MAKE) dev-frontend
-
-dev-log:
-	@COMPOSE="-f docker-compose.yml"; if [ "$$(head -c4 "$(HOME)/.opencode/bin/opencode" 2>/dev/null | od -An -tx1 | tr -d ' 
-')" = "7f454c46" ]; then COMPOSE="$$COMPOSE -f docker-compose.agent.yml"; fi; docker compose $$COMPOSE logs -f dev
-
-dev-build: preflight
-	@docker compose build
-
-reset:
-	@docker compose down -v
-
-shell: dev-shell
-opencode: dev-opencode
-opencode-auto: dev-opencode-auto
-
+dev-down: dev-frontend-stop
+	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE down
 dev-shell: preflight
-	@COMPOSE="-f docker-compose.yml"; if [ "$$(head -c4 "$(HOME)/.opencode/bin/opencode" 2>/dev/null | od -An -tx1 | tr -d ' 
-')" = "7f454c46" ]; then COMPOSE="$$COMPOSE -f docker-compose.agent.yml"; fi; docker compose $$COMPOSE exec dev bash || docker compose $$COMPOSE run --rm dev bash
-
+	@COMPOSE="-f docker-compose.yml"; if [ -r "$${HOME}/.opencode/bin/opencode" ] && command -v od >/dev/null 2>&1; then hdr=$$(od -An -tx1 "$${HOME}/.opencode/bin/opencode" 2>/dev/null | head -n1); case "$$hdr" in *"7f 45 4c 46"*) COMPOSE="$$COMPOSE -f docker-compose.agent.yml";; esac; fi; docker compose $$COMPOSE exec dev bash || docker compose $$COMPOSE run --rm dev bash
 dev-opencode: preflight require-agent
 	@COMPOSE="-f docker-compose.yml -f docker-compose.agent.yml"; HOST_UID=$$(id -u) HOST_GID=$$(id -g) GH_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null) GITHUB_TOKEN=$$(scripts/resolve-gh-token.sh 2>/dev/null); if [ -z "$$(docker compose $$COMPOSE ps -q dev 2>/dev/null)" ]; then echo "[opencode] starting dev stack..."; docker compose $$COMPOSE up -d dev; fi; docker compose $$COMPOSE exec -it dev bash -lc "cd /workspace && opencode $(OPENCODE_ARGS)" || docker compose $$COMPOSE exec -it dev zsh -lc "cd /workspace && opencode $(OPENCODE_ARGS)"
 
